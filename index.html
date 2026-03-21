@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ANCENT PHONE OS</title>
+  <style>
+    :root {
+      --sand-1: #f4dfb2;
+      --sand-2: #d9bb80;
+      --sand-3: #b88c4a;
+      --gold-1: #f5d77c;
+      --gold-2: #cfa54b;
+      --gold-3: #8a6424;
+      --stone-1: #3a2d1e;
+      --stone-2: #251b12;
+      --ink: #1a120a;
+      --text: #fff6df;
+      --muted: #dcc89d;
+      --glow: rgba(245, 215, 124, 0.28);
+      --shadow: 0 18px 40px rgba(0,0,0,0.35);
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      font-family: Inter, system-ui, Arial, sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(255, 231, 170, 0.12), transparent 28%),
+        linear-gradient(180deg, #24170e 0%, #120c08 100%);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+      background-size: 36px 36px;
+      opacity: 0.4;
+    }
+
+    .page {
+      min-height: 100%;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+    }
+
+    .phone-shell {
+      width: min(390px, 100%);
+      height: min(780px, 92vh);
+      background:
+        linear-gradient(180deg, #5e4526 0%, #2f2215 25%, #1e150e 100%);
+      border-radius: 34px;
+      padding: 12px;
+      box-shadow: var(--shadow);
+      border: 3px solid rgba(255, 224, 158, 0.24);
+      position: relative;
+    }
+
+    .phone-shell::before {
+      content: "";
+      position: absolute;
+      inset: 6px;
+      border-radius: 28px;
+      border: 1px solid rgba(255, 231, 181, 0.12);
+      pointer-events: none;
+    }
+
+    .phone {
+      width: 100%;
+      height: 100%;
+      border-radius: 26px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at top, rgba(245, 215, 124, 0.12), transparent 28%),
+        linear-gradient(180deg, #2b1f13 0%, #161008 100%);
+      position: relative;
+      border: 2px solid rgba(255, 219, 145, 0.18);
+    }
+
+    .notch {
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 22px;
+      background: rgba(0,0,0,0.35);
+      border-radius: 0 0 16px 16px;
+      z-index: 6;
+      border: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      background:
+        linear-gradient(180deg, rgba(244,223,178,0.04), rgba(184,140,74,0.02)),
+        linear-gradient(180deg, #24190f 0%, #140d08 100%);
+    }
+
+    .status-bar {
+      height: 36px;
+      padding: 10px 18px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--muted);
+      position: relative;
+      z-index: 3;
+      letter-spacing: 0.5px;
+    }
+
+    .status-right {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .wallpaper {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .sun {
+      position: absolute;
+      top: 80px;
+      right: 42px;
+      width: 92px;
+      height: 92px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,239,173,0.95), rgba(245,200,92,0.55) 60%, transparent 72%);
+      filter: blur(1px);
+      box-shadow: 0 0 26px rgba(245, 215, 124, 0.4);
+    }
+
+    .pyramid {
+      position: absolute;
+      bottom: 148px;
+      width: 0;
+      height: 0;
+      border-left: 72px solid transparent;
+      border-right: 72px solid transparent;
+      border-bottom: 118px solid rgba(202, 155, 86, 0.18);
+    }
+    .pyramid.p1 { left: 18px; }
+    .pyramid.p2 { right: 22px; border-left-width: 54px; border-right-width: 54px; border-bottom-width: 90px; }
+
+    .glyph-ring {
+      position: absolute;
+      inset: 54px 18px auto 18px;
+      height: 20px;
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      color: rgba(255, 226, 160, 0.14);
+      font-size: 16px;
+      letter-spacing: 2px;
+    }
+
+    .home-view {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      z-index: 2;
+      padding: 46px 14px 14px;
+      gap: 10px;
+    }
+
+    .home-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 2px 6px 0;
+    }
+
+    .phone-name {
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: var(--gold-1);
+      text-shadow: 0 0 14px rgba(245,215,124,0.12);
+    }
+
+    .page-indicator {
+      display: flex;
+      gap: 6px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+    }
+
+    .dot.active {
+      background: var(--gold-1);
+      box-shadow: 0 0 12px var(--glow);
+    }
+
+    .apps-page {
+      flex: 1;
+      display: none;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      align-content: start;
+      gap: 14px 10px;
+      padding: 10px 2px 0;
+    }
+
+    .apps-page.active {
+      display: grid;
+    }
+
+    .app-icon {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .app-icon:active {
+      transform: scale(0.97);
+    }
+
+    .app-glyph {
+      width: 62px;
+      height: 62px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      background:
+        linear-gradient(180deg, rgba(245,215,124,0.16), rgba(184,140,74,0.14)),
+        linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255, 225, 160, 0.18);
+      box-shadow: 0 10px 18px rgba(0,0,0,0.24);
+      font-size: 28px;
+      color: var(--text);
+    }
+
+    .app-label {
+      text-align: center;
+      font-size: 11px;
+      line-height: 1.2;
+      color: var(--text);
+      max-width: 66px;
+      word-break: break-word;
+    }
+
+    .dock {
+      height: 82px;
+      border-radius: 22px;
+      padding: 10px;
+      background: linear-gradient(180deg, rgba(255,245,218,0.06), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255, 228, 170, 0.1);
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      align-items: center;
+      backdrop-filter: blur(8px);
+    }
+
+    .dock .app-glyph {
+      width: 54px;
+      height: 54px;
+      border-radius: 16px;
+      margin: 0 auto;
+    }
+
+    .app-screen {
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      background:
+        linear-gradient(180deg, rgba(244,223,178,0.06), rgba(255,255,255,0.015)),
+        linear-gradient(180deg, #23180f 0%, #120c08 100%);
+      display: none;
+      flex-direction: column;
+    }
+
+    .app-screen.active {
+      display: flex;
+    }
+
+    .app-topbar {
+      height: 70px;
+      padding: 28px 14px 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      background: rgba(0,0,0,0.12);
+    }
+
+    .back-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 14px;
+      border: none;
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    .app-title-wrap {
+      min-width: 0;
+    }
+
+    .app-title {
+      font-weight: 800;
+      color: var(--gold-1);
+    }
+
+    .app-subtitle {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 250px;
+    }
+
+    .app-body {
+      flex: 1;
+      overflow: auto;
+      padding: 14px;
+    }
+
+    .app-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: 0 14px 24px rgba(0,0,0,0.2);
+    }
+
+    .nav-row {
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      padding: 10px 0 6px;
+      color: rgba(255,255,255,0.5);
+      font-size: 20px;
+    }
+
+    .plugin-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .plugin-code {
+      background: rgba(0,0,0,0.18);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 14px;
+      padding: 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      color: #fbeab8;
+      overflow: auto;
+      white-space: pre-wrap;
+    }
+
+    .small-btn {
+      width: auto;
+      padding: 9px 12px;
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(245,215,124,0.25), rgba(184,140,74,0.18));
+      color: var(--text);
+      border: 1px solid rgba(255,225,160,0.14);
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .apps-manager-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .managed-app {
+      display: grid;
+      grid-template-columns: 56px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .managed-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      font-size: 26px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .managed-meta b {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--gold-1);
+    }
+
+    .managed-meta small {
+      color: var(--muted);
+    }
+
+    @media (max-width: 500px) {
+      .page { padding: 8px; }
+      .phone-shell {
+        width: 100%;
+        height: 100vh;
+        max-height: none;
+        border-radius: 0;
+        padding: 0;
+        border: none;
+      }
+      .phone-shell::before,
+      .notch { display: none; }
+      .phone { border-radius: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="phone-shell">
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="screen">
+          <div class="wallpaper">
+            <div class="sun"></div>
+            <div class="glyph-ring">𓂀 𓃭 𓆣 𓏏 𓋹 𓂀</div>
+            <div class="pyramid p1"></div>
+            <div class="pyramid p2"></div>
+          </div>
+
+          <div class="status-bar">
+            <div>ANCENT OS</div>
+            <div class="status-right">
+              <span id="statusTime">--:--</span>
+              <span>☀︎</span>
+              <span>100%</span>
+            </div>
+          </div>
+
+          <div class="home-view">
+            <div class="home-top">
+              <div class="phone-name">ANCENT PHONE</div>
+              <div class="page-indicator" id="pageDots"></div>
+            </div>
+
+            <div id="page0" class="apps-page active"></div>
+            <div id="page1" class="apps-page"></div>
+
+            <div id="dock" class="dock"></div>
+            <div class="nav-row">
+              <span>△</span>
+              <span>◯</span>
+              <span>▢</span>
+            </div>
+          </div>
+
+          <div id="appScreen" class="app-screen">
+            <div class="app-topbar">
+              <button id="backBtn" class="back-btn">←</button>
+              <div class="app-title-wrap">
+                <div id="appTitle" class="app-title">App</div>
+                <div id="appSubtitle" class="app-subtitle">Loading...</div>
+              </div>
+            </div>
+            <div id="appBody" class="app-body"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =====================================================
+    // EASY EDIT PLUGIN-LIKE APP LIST
+    // type:
+    // - internal: shows built-in content
+    // - link: auto opens another website or /page path
+    // page: 0 or 1 = which home page
+    // dock: true = shows in bottom dock
+    // =====================================================
+    const apps = [
+      { name: 'Temple Notes', icon: '𓂀', type: 'internal', key: 'notes', page: 0 },
+      { name: 'Sand Browser', icon: '🌐', type: 'internal', key: 'browser', page: 0 },
+      { name: 'App Shrine', icon: '⚙️', type: 'internal', key: 'manager', page: 0 },
+      { name: 'Maps', icon: '🗺️', type: 'link', url: '/maps', page: 0 },
+      { name: 'Gallery', icon: '🖼️', type: 'link', url: '/gallery', page: 0 },
+      { name: 'JERRY Tools', icon: '💠', type: 'link', url: '/jerry-home', page: 0 },
+      { name: 'Music', icon: '🎵', type: 'link', url: '/capymusicmaker', page: 0 },
+      { name: 'Portal', icon: '🔺', type: 'internal', key: 'portal', page: 0 },
+
+      { name: 'Calendar', icon: '📅', type: 'internal', key: 'calendar', page: 1 },
+      { name: 'Weather', icon: '☀️', type: 'internal', key: 'weather', page: 1 },
+      { name: 'WIP', icon: '🏺', type: 'link', url: 'about:blank', page: 1 },
+      { name: 'WIP', icon: '🐫', type: 'link', url: 'about:blank', page: 1 },
+
+      { name: 'Home', icon: '⌂', type: 'internal', key: 'homeInfo', dock: true },
+      { name: 'Apps', icon: '☷', type: 'internal', key: 'manager', dock: true },
+      { name: 'Browser', icon: '🌐', type: 'internal', key: 'browser', dock: true },
+      { name: 'Links', icon: '🔗', type: 'link', url: '/links', dock: true }
+    ];
+
+    const state = {
+      currentPage: 0,
+      notes: localStorage.getItem('ancent-phone-notes') || '',
+      browserUrl: '',
+    };
+
+    const els = {
+      statusTime: document.getElementById('statusTime'),
+      pageDots: document.getElementById('pageDots'),
+      page0: document.getElementById('page0'),
+      page1: document.getElementById('page1'),
+      dock: document.getElementById('dock'),
+      appScreen: document.getElementById('appScreen'),
+      appTitle: document.getElementById('appTitle'),
+      appSubtitle: document.getElementById('appSubtitle'),
+      appBody: document.getElementById('appBody'),
+      backBtn: document.getElementById('backBtn')
+    };
+
+    function updateClock() {
+      const d = new Date();
+      els.statusTime.textContent = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    }
+
+    function isExternalLink(url) {
+      return /^https?:\/\//i.test(url);
+    }
+
+    function normalizeLink(url) {
+      if (!url) return '#';
+      return url;
+    }
+
+    function createAppIcon(app) {
+      const wrap = document.createElement('div');
+      wrap.className = 'app-icon';
+      wrap.innerHTML = `
+        <div class="app-glyph">${app.icon}</div>
+        <div class="app-label">${app.name}</div>
+      `;
+      wrap.addEventListener('click', () => openApp(app));
+      return wrap;
+    }
+
+    function renderPages() {
+      els.page0.innerHTML = '';
+      els.page1.innerHTML = '';
+      els.dock.innerHTML = '';
+      els.pageDots.innerHTML = '';
+
+      [0, 1].forEach(i => {
+        const dot = document.createElement('div');
+        dot.className = 'dot' + (i === state.currentPage ? ' active' : '');
+        dot.addEventListener('click', () => switchPage(i));
+        els.pageDots.appendChild(dot);
+      });
+
+      apps.filter(app => app.dock).forEach(app => {
+        els.dock.appendChild(createAppIcon(app));
+      });
+
+      apps.filter(app => !app.dock).forEach(app => {
+        const target = Number(app.page || 0) === 1 ? els.page1 : els.page0;
+        target.appendChild(createAppIcon(app));
+      });
+
+      switchPage(state.currentPage);
+    }
+
+    function switchPage(index) {
+      state.currentPage = index;
+      els.page0.classList.toggle('active', index === 0);
+      els.page1.classList.toggle('active', index === 1);
+      [...els.pageDots.children].forEach((dot, i) => dot.classList.toggle('active', i === index));
+    }
+
+    function closeApp() {
+      els.appScreen.classList.remove('active');
+      els.appBody.innerHTML = '';
+    }
+
+    function openApp(app) {
+      if (app.type === 'link') {
+        const url = normalizeLink(app.url);
+        if (isExternalLink(url)) {
+          window.open(url, '_blank', 'noopener,noreferrer');
+        } else {
+          window.location.href = url;
+        }
+        return;
+      }
+
+      els.appTitle.textContent = app.name;
+      els.appSubtitle.textContent = app.type === 'internal' ? 'Built into ANCENT OS' : app.url;
+      els.appBody.innerHTML = '';
+      els.appScreen.classList.add('active');
+
+      const body = renderInternalApp(app.key);
+      els.appBody.appendChild(body);
+    }
+
+    function renderInternalApp(key) {
+      const wrap = document.createElement('div');
+      wrap.className = 'app-card';
+
+      if (key === 'notes') {
+        wrap.innerHTML = `
+          <h3 style="margin-top:0; color:var(--gold-1);">Temple Notes</h3>
+          <p style="color:var(--muted); margin-top:0;">Write whatever cursed or useful message you want and it saves in your browser.</p>
+          <textarea id="notesBox" style="min-height:260px; resize:vertical;">${escapeHtml(state.notes)}</textarea>
+          <div style="display:flex; gap:10px; margin-top:10px;">
+            <button class="small-btn" id="saveNotesBtn">Save Notes</button>
+            <button class="small-btn" id="clearNotesBtn">Clear</button>
+          </div>
+        `;
+        queueMicrotask(() => {
+          const notesBox = document.getElementById('notesBox');
+          document.getElementById('saveNotesBtn').onclick = () => {
+            state.notes = notesBox.value;
+            localStorage.setItem('ancent-phone-notes', state.notes);
+          };
+          document.getElementById('clearNotesBtn').onclick = () => {
+            notesBox.value = '';
+            state.notes = '';
+            localStorage.setItem('ancent-phone-notes', '');
+          };
+        });
+      }
+
+      else if (key === 'browser') {
+        wrap.innerHTML = `
+          <h3 style="margin-top:0; color:var(--gold-1);">Sand Browser</h3>
+          <p style="color:var(--muted); margin-top:0;">Paste any link or site path. It auto-detects external websites and internal /pages.</p>
+          <input id="browserInput" type="text" placeholder="https://example.com or /gallery" value="${escapeHtml(state.browserUrl)}" />
+          <div style="display:flex; gap:10px; margin-top:10px;">
+            <button class="small-btn" id="browserGoBtn">Open Link</button>
+            <button class="small-btn" id="browserExampleBtn">Use /gallery</button>
+          </div>
+          <div class="plugin-code" style="margin-top:12px;">Examples:\nhttps://example.com\n/gallery\n/jerry-tools\n/capybara-music-maker</div>
+        `;
+        queueMicrotask(() => {
+          const input = document.getElementById('browserInput');
+          document.getElementById('browserGoBtn').onclick = () => {
+            state.browserUrl = input.value.trim();
+            if (!state.browserUrl) return;
+            const url = normalizeLink(state.browserUrl);
+            if (isExternalLink(url)) window.open(url, '_blank', 'noopener,noreferrer');
+            else window.location.href = url;
+          };
+          document.getElementById('browserExampleBtn').onclick = () => {
+            input.value = '/gallery';
+          };
+        });
+      }
+
+      else if (key === 'manager') {
+        wrap.innerHTML = `
+          <div class="plugin-title">
+            <div>
+              <h3 style="margin:0; color:var(--gold-1);">App Shrine</h3>
+              <div style="color:var(--muted); font-size:13px; margin-top:4px;">This works like your JERRY Tools plugin list. Edit the apps array in the HTML to add new apps.</div>
+            </div>
+          </div>
+          <div class="plugin-code">const apps = [
+  { name: 'Gallery', icon: '🖼️', type: 'link', url: '/gallery', page: 0 },
+  { name: 'Website 1', icon: '🏺', type: 'link', url: 'https://example.com', page: 1 },
+  { name: 'Temple Notes', icon: '𓂀', type: 'internal', key: 'notes', page: 0 }
+];</div>
+          <div class="apps-manager-list" id="managerList"></div>
+        `;
+        queueMicrotask(() => {
+          const list = document.getElementById('managerList');
+          apps.forEach(app => {
+            const row = document.createElement('div');
+            row.className = 'managed-app';
+            row.innerHTML = `
+              <div class="managed-icon">${app.icon}</div>
+              <div class="managed-meta">
+                <b>${app.name}</b>
+                <small>${app.type === 'link' ? app.url : 'internal: ' + app.key}</small>
+              </div>
+              <button class="small-btn">Open</button>
+            `;
+            row.querySelector('button').onclick = () => openApp(app);
+            list.appendChild(row);
+          });
+        });
+      }
+
+      else if (key === 'calendar') {
+        const today = new Date();
+        wrap.innerHTML = `
+          <h3 style="margin-top:0; color:var(--gold-1);">Sun Calendar</h3>
+          <p style="color:var(--muted);">Today is ${today.toDateString()}.</p>
+          <div class="plugin-code">Ancient reminder:\nDo not anger the sand.\nDo not trust cursed portals.\nCheck your relics.</div>
+        `;
+      }
+
+      else if (key === 'weather') {
+        wrap.innerHTML = `
+          <h3 style="margin-top:0; color:var(--gold-1);">Desert Weather</h3>
+          <p style="color:var(--muted);">Hot. Slightly cursed. Wind level: dramatic.</p>
+          <div class="plugin-code">Forecast:\n☀︎ Sunny\n🌬 Sand gusts\n✨ Rare hieroglyph glow tonight</div>
+        `;
+      }
+
+      else if (key === 'portal') {
+        wrap.innerHTML = `
+          <h3 style="margin-top:0; color:var(--gold-1);">Portal Chamber</h3>
+          <p style="color:var(--muted);">Pretend this is the secret portal room app. You can swap this later to point at a real portal website or route.</p>
+          <div style="display:grid; gap:10px; margin-top:14px;">
+            <button class="small-btn" data-link="/rustworld">Open RustWorld</button>
+            <button class="small-btn" data-link="/gallery">Open Gallery</button>
+            <button class="small-btn" data-link="https://example.com">Open External Site</button>
+          </div>
+        `;
+        queueMicrotask(() => {
+          wrap.querySelectorAll('[data-link]').forEach(btn => {
+            btn.onclick = () => {
+              const url = btn.getAttribute('data-link');
+              if (isExternalLink(url)) window.open(url, '_blank', 'noopener,noreferrer');
+              else window.location.href = url;
+            };
+          });
+        });
+      }
+
+      else if (key === 'homeInfo') {
+        wrap.innerHTML = `
+          <h3 style="margin-top:0; color:var(--gold-1);">Home</h3>
+          <p style="color:var(--muted);">This is a fake Android-style ancient Egypt phone UI. Apps can open internal panels or jump to links automatically.</p>
+          <div class="plugin-code">Tip:\nUse type: 'link' for websites or /pages.\nUse type: 'internal' for built-in apps.</div>
+        `;
+      }
+
+      else {
+        wrap.innerHTML = `<h3 style="margin-top:0; color:var(--gold-1);">Unknown App</h3><p style="color:var(--muted);">This app key is missing a renderer.</p>`;
+      }
+
+      return wrap;
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function bindGlobalEvents() {
+      els.backBtn.addEventListener('click', closeApp);
+
+      let startX = 0;
+      let endX = 0;
+      document.querySelector('.home-view').addEventListener('touchstart', e => {
+        startX = e.changedTouches[0].clientX;
+      }, { passive: true });
+      document.querySelector('.home-view').addEventListener('touchend', e => {
+        endX = e.changedTouches[0].clientX;
+        const diff = endX - startX;
+        if (Math.abs(diff) > 45) {
+          if (diff < 0) switchPage(Math.min(1, state.currentPage + 1));
+          else switchPage(Math.max(0, state.currentPage - 1));
+        }
+      }, { passive: true });
+    }
+
+    updateClock();
+    setInterval(updateClock, 1000);
+    renderPages();
+    bindGlobalEvents();
+  </script>
+</body>
+</html>
