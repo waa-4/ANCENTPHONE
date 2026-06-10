@@ -19,12 +19,21 @@ window.ANCENTPHONE_CONFIG = {
       description: "Create local apps and website links."
     },
     {
-      id: "browser",
-      name: "Obelisk Net",
+      id: "jerry",
+      name: "Jerry Tools",
       icon: "🌐",
       type: "link",
-      description: "Example website link.",
-      url: "https://example.com",
+      description: "da tool hub..",
+      url: "https://waa-4.github.io/jerry-home/",
+      openInNewTab: true
+    },
+    {
+      id: "pad",
+      name: "PaD",
+      icon: "P",
+      type: "link",
+      description: "y e ssssssssssssssssssssssss",
+      url: "https://waa-4.github.io/jerry-home/",
       openInNewTab: true
     },
     {
