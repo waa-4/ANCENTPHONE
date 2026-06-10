@@ -56,3 +56,24 @@ If the browser still remembers old broken data, clear site data/localStorage or 
 The **Spawn Temp App** button now creates temporary apps only. They are not saved into localStorage.
 
 If you used the older patch and old `Relic` apps are stuck forever, press **Clear Spawned Apps** once.
+
+
+## v3 cleanup fix
+
+This version has a stronger spawned-app remover.
+
+It removes old spawned apps with IDs like:
+
+- `relic-...`
+- `temp-relic-...`
+- `spawned-...`
+- `temp-spawned-...`
+- `random-relic-...`
+
+There are now three ways to clear them:
+
+1. Press **Clear** on the phone toolbar.
+2. Press **Clear Spawned Apps** in the side panel.
+3. Press **Hard Reset Phone Data** if browser storage got really messy.
+
+Hard Reset clears AncentPhone localStorage and reloads the page.

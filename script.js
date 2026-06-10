@@ -88,45 +88,80 @@ function saveCustomApps() {
   localStorage.setItem(STORE.custom, JSON.stringify(state.customApps));
 }
 
-function removeOldSpawnedApps() {
-  const before = state.customApps.length;
-  state.customApps = state.customApps.filter(app => !String(app.id || "").startsWith("relic-"));
-  if (state.customApps.length !== before) {
-    saveCustomApps();
-  }
-
-  if (state.layout) {
-    state.layout.home = state.layout.home.filter(id => !String(id).startsWith("relic-"));
-    state.layout.dock = state.layout.dock.filter(id => !String(id).startsWith("relic-"));
-    Object.keys(state.layout.positions || {}).forEach(id => {
-      if (String(id).startsWith("relic-")) delete state.layout.positions[id];
-    });
-    Object.keys(state.bodies || {}).forEach(id => {
-      if (String(id).startsWith("relic-")) delete state.bodies[id];
-    });
-    saveLayout();
-  }
-
-  renderHome();
-  notify("Spawned apps cleared", "Old permanent relic apps were removed.");
+function isSpawnedId(id) {
+  const text = String(id || "").toLowerCase();
+  return (
+    text.startsWith("relic-") ||
+    text.startsWith("temp-relic-") ||
+    text.startsWith("spawned-") ||
+    text.startsWith("temp-spawned-") ||
+    text.startsWith("random-relic-")
+  );
 }
 
-function clearTempSpawnedApps() {
+function isSpawnedApp(app) {
+  const name = String(app?.name || "").toLowerCase();
+  const desc = String(app?.description || "").toLowerCase();
+  return isSpawnedId(app?.id) || name.startsWith("relic ") || name.startsWith("temp relic ") || desc.includes("spawned app");
+}
+
+function cleanupSpawnedApps(options = {}) {
+  const silent = Boolean(options.silent);
+  let removed = 0;
+
+  const beforeCustom = state.customApps.length;
+  state.customApps = state.customApps.filter(app => !isSpawnedApp(app));
+  removed += beforeCustom - state.customApps.length;
+  saveCustomApps();
+
   state.tempApps = [];
+
   if (state.layout) {
-    state.layout.home = state.layout.home.filter(id => !String(id).startsWith("temp-relic-") && !String(id).startsWith("relic-"));
+    const beforeHome = state.layout.home.length;
+    const beforeDock = state.layout.dock.length;
+
+    state.layout.home = state.layout.home.filter(id => !isSpawnedId(id));
+    state.layout.dock = state.layout.dock.filter(id => !isSpawnedId(id));
+
+    removed += beforeHome - state.layout.home.length;
+    removed += beforeDock - state.layout.dock.length;
+
     Object.keys(state.layout.positions || {}).forEach(id => {
-      if (String(id).startsWith("temp-relic-") || String(id).startsWith("relic-")) delete state.layout.positions[id];
+      if (isSpawnedId(id)) {
+        delete state.layout.positions[id];
+        removed++;
+      }
     });
+
     Object.keys(state.bodies || {}).forEach(id => {
-      if (String(id).startsWith("temp-relic-") || String(id).startsWith("relic-")) delete state.bodies[id];
+      if (isSpawnedId(id)) {
+        delete state.bodies[id];
+      }
     });
+
     saveLayout();
   }
-  renderHome();
-  notify("Temporary apps cleared", "Spawned apps are gone.");
+
+  if (!silent) {
+    renderHome();
+    notify("Spawned apps cleared", removed ? `Removed ${removed} spawned app entries.` : "No spawned apps were found.");
+  }
+
+  return removed;
 }
 
+function hardClearAncentPhoneData() {
+  Object.values(STORE).forEach(key => localStorage.removeItem(key));
+  localStorage.removeItem("ancentphone.physics.layout.v1");
+  localStorage.removeItem("ancentphone.physics.customApps.v1");
+  localStorage.removeItem("ancentphone.physics.note.v1");
+  localStorage.removeItem("ancentphone.physics.theme.v1");
+  localStorage.removeItem("ancentphone.customApps.v2");
+  localStorage.removeItem("ancentphone.layout.v2");
+  localStorage.removeItem("ancentphone.note.v2");
+  localStorage.removeItem("ancentphone.theme.v2");
+  location.reload();
+}
 
 function screenMode(text) {
   $("#modeText").textContent = text;
@@ -425,11 +460,12 @@ function chaos() {
 }
 
 function resetLayout() {
+  cleanupSpawnedApps({ silent: true });
   localStorage.removeItem(STORE.layout);
   state.layout = defaultLayout();
   state.bodies = {};
   renderHome();
-  notify("Reset", "Layout fixed.");
+  notify("Reset", "Layout fixed and spawned apps removed.");
 }
 
 function openApp(id) {
@@ -753,7 +789,9 @@ $("#openDebug").addEventListener("click", () => {
   openApp("debug");
 });
 $("#spawnBtn").addEventListener("click", spawnApp);
-$("#clearSpawnedBtn").addEventListener("click", () => { removeOldSpawnedApps(); clearTempSpawnedApps(); });
+$("#clearSpawnedBtn").addEventListener("click", () => cleanupSpawnedApps());
+$("#toolbarClearSpawned").addEventListener("click", () => cleanupSpawnedApps());
+$("#hardClearBtn").addEventListener("click", hardClearAncentPhoneData);
 
 document.addEventListener("click", event => {
   const folder = event.target.closest("[data-folder-open]");
@@ -780,7 +818,7 @@ $("#screen").addEventListener("touchend", event => {
 }, { passive: true });
 
 state.layout = loadLayout();
-removeOldSpawnedApps();
+cleanupSpawnedApps({ silent: true });
 setTheme(state.themeIndex);
 renderHome();
 updateClock();

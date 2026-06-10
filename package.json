@@ -1,7 +1,7 @@
 {
   "name": "ancentphone-stable-fun-patch",
-  "version": "3.1.1",
-  "description": "Stable AncentPhone patch with temporary spawned apps and clear spawned apps button.",
+  "version": "3.1.2",
+  "description": "Stable AncentPhone patch with robust spawned app cleanup and hard reset.",
   "scripts": {
     "start": "python -m http.server 8000"
   },

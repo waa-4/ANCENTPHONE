@@ -577,3 +577,6 @@ button {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+.controlsFive { grid-template-columns: repeat(5, 1fr); }
+.controlsFive button { font-size: .68rem; padding-left: .1rem; padding-right: .1rem; }
