@@ -1,39 +1,35 @@
-# AncentPhone - Fun Physics + Website Links Update
+# AncentPhone Stable Fun Patch
 
-This version makes AncentPhone feel more like a fun cursed phone toy.
+This is a safer patched build after the previous physics version broke.
 
-## New features
+## Features
 
-- Website link apps
-- `config.js` supports app URLs
-- Move mode for swiping/dragging apps around
-- App positions save in localStorage
-- Gravity mode: apps fall, bounce, and collide
-- Tilt mode: phone tilts with mouse/device orientation
-- Chaos button to fling apps everywhere
-- Settings app with fun toggles
-- Debug app can create website-link apps
-- Folders/groups still supported
-- Dock still supported
-- Sand/ancient phone style
+- Ancient sand/stone phone design
+- Website-link apps through `config.js`
+- Debug app for local custom apps
+- Move mode for dragging/swiping apps
+- Gravity mode for falling apps
+- Chaos button
+- Tilt mode
+- Dock
+- Folders
+- Notes
+- Calculator
+- Settings
+- Reset layout button
 
-## Files
+## Install
+
+Extract into your repo and replace the old files:
 
 - `index.html`
 - `style.css`
 - `script.js`
 - `config.js`
-- `README.md`
 
-## Install
+Back up your old files first.
 
-Extract this zip into your repo.
-
-Back up your old files first if needed.
-
-## Making website link apps
-
-Open `config.js` and add an app like this:
+## Add a website app in config.js
 
 ```js
 {
@@ -47,21 +43,7 @@ Open `config.js` and add an app like this:
 }
 ```
 
-## Moving apps
+## Emergency fix
 
-Click **Move**, then drag/swipe icons around.
-
-Positions save automatically in your browser.
-
-## Gravity mode
-
-Click **Gravity** and apps fall like physical objects.
-
-Use **Chaos** to throw them everywhere.
-
-## Tilt mode
-
-Open **Settings** or the Tablet Log and enable **Tilt**.
-
-On desktop, the phone reacts to mouse movement.
-On mobile, it may react to device tilt if the browser allows it.
+If app positions get weird, press **Reset**.
+If the browser still remembers old broken data, clear site data/localStorage or use a different browser tab.

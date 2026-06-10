@@ -1,28 +1,13 @@
-/*
-  AncentPhone config.js
-
-  Built-in apps go here.
-  Types:
-  - link: opens another website
-  - text: simple text app
-  - list: list app
-  - folder: group app
-  - notes: saved notes
-  - calculator: calculator
-  - debug: in-phone custom app creator
-  - camera: fake camera
-*/
-
 window.ANCENTPHONE_CONFIG = {
   phoneName: "AncentPhone",
-  phoneSubtitle: "Ancient cursed smartphone",
+  phoneSubtitle: "Stable cursed phone",
   dock: ["debug", "notes", "browser", "settings"],
 
   themes: [
-    { id: "default", name: "Desert Relic", className: "" },
-    { id: "night", name: "Moon Tomb", className: "theme-night" },
-    { id: "moss", name: "Moss Ruin", className: "theme-moss" },
-    { id: "blood", name: "Cursed Obelisk", className: "theme-blood" }
+    { name: "Desert Relic", className: "" },
+    { name: "Moon Tomb", className: "themeNight" },
+    { name: "Moss Ruin", className: "themeMoss" },
+    { name: "Cursed Obelisk", className: "themeBlood" }
   ],
 
   apps: [
@@ -31,14 +16,14 @@ window.ANCENTPHONE_CONFIG = {
       name: "Debug",
       icon: "🧪",
       type: "debug",
-      description: "Create custom apps and website links."
+      description: "Create local apps and website links."
     },
     {
       id: "browser",
       name: "Obelisk Net",
       icon: "🌐",
       type: "link",
-      description: "Example website link app.",
+      description: "Example website link.",
       url: "https://example.com",
       openInNewTab: true
     },
@@ -47,7 +32,7 @@ window.ANCENTPHONE_CONFIG = {
       name: "GitHub",
       icon: "🐙",
       type: "link",
-      description: "Link to GitHub.",
+      description: "Open GitHub.",
       url: "https://github.com",
       openInNewTab: true
     },
@@ -56,7 +41,7 @@ window.ANCENTPHONE_CONFIG = {
       name: "YouTube",
       icon: "▶️",
       type: "link",
-      description: "Link to YouTube.",
+      description: "Open YouTube.",
       url: "https://youtube.com",
       openInNewTab: true
     },
@@ -65,24 +50,24 @@ window.ANCENTPHONE_CONFIG = {
       name: "Notes",
       icon: "📜",
       type: "notes",
-      description: "Papyrus note pad."
+      description: "Papyrus notes saved in your browser."
     },
     {
       id: "settings",
       name: "Settings",
       icon: "⚙️",
       type: "settings",
-      description: "Phone toggles and fun stuff."
+      description: "Phone controls."
     },
     {
-      id: "weather",
+      id: "sandcast",
       name: "Sandcast",
       icon: "☀️",
       type: "text",
-      description: "Fake desert forecast.",
+      description: "Fake weather.",
       content: {
-        title: "Forecast",
-        body: "Hot, sandy, and maybe haunted. Chance of scarabs: 40%."
+        title: "Sandcast",
+        body: "Hot, sandy, and possibly haunted. Scarab chance: 40%."
       }
     },
     {
@@ -98,7 +83,7 @@ window.ANCENTPHONE_CONFIG = {
       name: "Relics",
       icon: "🗿",
       type: "list",
-      description: "Fake file storage.",
+      description: "Fake storage.",
       items: ["tablet_log.txt", "sarcophagus_photo.png", "do_not_open.jar", "sandy_config.json"]
     },
     {
@@ -113,10 +98,10 @@ window.ANCENTPHONE_CONFIG = {
       name: "Lens",
       icon: "📷",
       type: "camera",
-      description: "Fake ancient camera."
+      description: "Fake camera."
     },
     {
-      id: "folder-fun",
+      id: "funfolder",
       name: "Fun",
       icon: "🧰",
       type: "folder",

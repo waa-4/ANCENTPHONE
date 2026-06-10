@@ -1,12 +1,12 @@
 const $ = (q) => document.querySelector(q);
-const $$ = (q) => [...document.querySelectorAll(q)];
+const $$ = (q) => Array.from(document.querySelectorAll(q));
 
 const CONFIG = window.ANCENTPHONE_CONFIG || {};
-const STORAGE = {
-  layout: "ancentphone.physics.layout.v1",
-  customApps: "ancentphone.physics.customApps.v1",
-  note: "ancentphone.physics.note.v1",
-  theme: "ancentphone.physics.theme.v1"
+const STORE = {
+  layout: "ancentphone.stable.layout.v1",
+  custom: "ancentphone.stable.custom.v1",
+  note: "ancentphone.stable.note.v1",
+  theme: "ancentphone.stable.theme.v1"
 };
 
 const state = {
@@ -14,88 +14,81 @@ const state = {
   moving: false,
   gravity: false,
   tilt: false,
-  themeIndex: Number(localStorage.getItem(STORAGE.theme) || 0),
-  note: localStorage.getItem(STORAGE.note) || "Ancient notes:\n- Apps can link to websites\n- Move mode lets you swipe apps around\n- Gravity mode makes apps fall\n- Tilt mode makes the phone feel alive",
-  customApps: loadCustomApps(),
+  themeIndex: Number(localStorage.getItem(STORE.theme) || 0),
+  customApps: safeJson(localStorage.getItem(STORE.custom), []),
+  note: localStorage.getItem(STORE.note) || "Ancient notes:\n- Add website apps in config.js\n- Use Move to drag apps\n- Gravity makes apps fall\n- Debug can make local apps",
   layout: null,
   bodies: {},
+  pointer: null,
   grabbed: null,
   calc: "0",
-  lastTime: performance.now(),
-  pointerStart: null,
-  phoneTilt: { x: 0, y: 0 },
-  sensorTilt: { x: 0, y: 0 }
+  mouseTiltX: 0,
+  mouseTiltY: 0,
+  lastFrame: performance.now()
 };
 
-const builtInApps = Array.isArray(CONFIG.apps) ? CONFIG.apps : [];
-const themes = Array.isArray(CONFIG.themes) ? CONFIG.themes : [{ name: "Default", className: "" }];
+function safeJson(text, fallback) {
+  try { return JSON.parse(text) || fallback; }
+  catch { return fallback; }
+}
 
-function getAllApps() {
-  const merged = [...builtInApps, ...state.customApps];
-  const seen = new Set();
-  return merged.filter(app => {
-    if (!app || !app.id || seen.has(app.id)) return false;
-    seen.add(app.id);
-    return true;
+function allApps() {
+  const result = [];
+  const used = new Set();
+
+  (CONFIG.apps || []).concat(state.customApps).forEach(app => {
+    if (!app || !app.id || used.has(app.id)) return;
+    used.add(app.id);
+    result.push(app);
   });
+
+  return result;
 }
 
-function getApp(id) {
-  return getAllApps().find(app => app.id === id);
-}
-
-function loadCustomApps() {
-  try { return JSON.parse(localStorage.getItem(STORAGE.customApps) || "[]"); }
-  catch { return []; }
-}
-
-function saveCustomApps() {
-  localStorage.setItem(STORAGE.customApps, JSON.stringify(state.customApps));
+function appById(id) {
+  return allApps().find(app => app.id === id);
 }
 
 function defaultLayout() {
-  const ids = getAllApps().map(app => app.id);
+  const ids = allApps().map(app => app.id);
   const dock = (CONFIG.dock || []).filter(id => ids.includes(id)).slice(0, 4);
-  const home = ids.filter(id => !dock.includes(id));
-  return { dock, home, positions: {} };
+  return {
+    dock,
+    home: ids.filter(id => !dock.includes(id)),
+    positions: {}
+  };
 }
 
 function loadLayout() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE.layout) || "null");
-    if (!saved || !Array.isArray(saved.home) || !Array.isArray(saved.dock)) return defaultLayout();
+  const saved = safeJson(localStorage.getItem(STORE.layout), null);
+  if (!saved || !Array.isArray(saved.home) || !Array.isArray(saved.dock)) return defaultLayout();
 
-    const ids = getAllApps().map(app => app.id);
-    const valid = new Set(ids);
+  const ids = allApps().map(app => app.id);
+  const valid = new Set(ids);
+  const dock = saved.dock.filter(id => valid.has(id)).slice(0, 4);
+  const home = saved.home.filter(id => valid.has(id) && !dock.includes(id));
 
-    const dock = saved.dock.filter(id => valid.has(id)).slice(0, 4);
-    const home = saved.home.filter(id => valid.has(id) && !dock.includes(id));
-    for (const id of ids) {
-      if (!dock.includes(id) && !home.includes(id)) home.push(id);
-    }
+  ids.forEach(id => {
+    if (!dock.includes(id) && !home.includes(id)) home.push(id);
+  });
 
-    return { dock, home, positions: saved.positions || {} };
-  } catch {
-    return defaultLayout();
-  }
+  return {
+    dock,
+    home,
+    positions: saved.positions || {}
+  };
 }
 
 function saveLayout() {
-  localStorage.setItem(STORAGE.layout, JSON.stringify(state.layout));
+  localStorage.setItem(STORE.layout, JSON.stringify(state.layout));
 }
 
-function setTheme(index) {
-  state.themeIndex = ((index % themes.length) + themes.length) % themes.length;
-  localStorage.setItem(STORAGE.theme, state.themeIndex);
-  const shell = $("#phoneShell");
-  shell.classList.remove(...themes.map(t => t.className).filter(Boolean));
-  const theme = themes[state.themeIndex];
-  if (theme?.className) shell.classList.add(theme.className);
+function saveCustomApps() {
+  localStorage.setItem(STORE.custom, JSON.stringify(state.customApps));
 }
 
-function cycleTheme() {
-  setTheme(state.themeIndex + 1);
-  notify("Theme changed", themes[state.themeIndex]?.name || "Unknown theme");
+function screenMode(text) {
+  $("#modeText").textContent = text;
 }
 
 function showView(id) {
@@ -103,80 +96,110 @@ function showView(id) {
   $(id).classList.add("active");
 }
 
-function lockPhone() {
-  state.locked = true;
-  $("#shade").classList.remove("open");
-  showView("#lockView");
-  $("#modeText").textContent = "SLEEP";
-}
-
-function unlockPhone() {
+function unlock() {
   state.locked = false;
   showView("#homeView");
-  $("#modeText").textContent = state.gravity ? "GRAV" : "HOME";
+  screenMode(state.gravity ? "GRAV" : state.moving ? "MOVE" : "HOME");
+}
+
+function lock() {
+  state.locked = true;
+  $("#log").classList.remove("open");
+  showView("#lockView");
+  screenMode("SLEEP");
 }
 
 function updateClock() {
   const now = new Date();
   const time = now.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-  $("#statusTime").textContent = time;
+
+  $("#timeText").textContent = time;
   $("#lockTime").textContent = time;
-  $("#lockDate").textContent = now.toLocaleDateString([], {
+  $("#dateText").textContent = now.toLocaleDateString([], {
     weekday: "long",
     month: "long",
     day: "numeric"
   });
 }
 
+function setTheme(index) {
+  const themes = CONFIG.themes || [{ className: "" }];
+  state.themeIndex = ((index % themes.length) + themes.length) % themes.length;
+  localStorage.setItem(STORE.theme, state.themeIndex);
+
+  const phone = $("#phone");
+  themes.forEach(theme => {
+    if (theme.className) phone.classList.remove(theme.className);
+  });
+
+  const theme = themes[state.themeIndex];
+  if (theme && theme.className) phone.classList.add(theme.className);
+}
+
+function cycleTheme() {
+  setTheme(state.themeIndex + 1);
+  const themes = CONFIG.themes || [];
+  notify("Theme", themes[state.themeIndex]?.name || "Changed");
+}
+
+function appAreaSize() {
+  const rect = $("#appArea").getBoundingClientRect();
+  return {
+    w: Math.max(250, rect.width),
+    h: Math.max(300, rect.height)
+  };
+}
+
+function gridPos(index) {
+  const area = appAreaSize();
+  const col = index % 3;
+  const row = Math.floor(index / 3);
+  return {
+    x: Math.min(10 + col * 92, area.w - 78),
+    y: Math.min(8 + row * 96, area.h - 90)
+  };
+}
+
 function renderHome() {
   if (!state.layout) state.layout = loadLayout();
 
-  $("#phoneTitle").textContent = CONFIG.phoneName || "AncentPhone";
-  $("#phoneSubtitle").textContent = CONFIG.phoneSubtitle || "Ancient phone";
+  $("#phoneName").textContent = CONFIG.phoneName || "AncentPhone";
+  $("#phoneSub").textContent = CONFIG.phoneSubtitle || "Stable cursed phone";
   $("#homeView").classList.toggle("moving", state.moving);
-  $("#editToggle").textContent = state.moving ? "Done" : "Move";
-  $("#gravityToggle").textContent = state.gravity ? "Gravity ✓" : "Gravity";
-  $("#modeText").textContent = state.gravity ? "GRAV" : state.moving ? "MOVE" : "HOME";
+  $("#moveBtn").textContent = state.moving ? "Done" : "Move";
+  $("#gravityBtn").textContent = state.gravity ? "Gravity ✓" : "Gravity";
+  $("#logGravity").textContent = state.gravity ? "Gravity ✓" : "Gravity";
+  $("#tiltBtn").textContent = state.tilt ? "Tilt ✓" : "Tilt";
 
-  const appSpace = $("#appSpace");
-  appSpace.innerHTML = "";
+  const appArea = $("#appArea");
+  appArea.innerHTML = "";
 
-  const homeIds = state.layout.home.filter(id => getApp(id));
-  const rect = getSpaceSize();
+  state.layout.home = state.layout.home.filter(id => appById(id));
+  state.layout.dock = state.layout.dock.filter(id => appById(id)).slice(0, 4);
 
-  homeIds.forEach((appId, index) => {
-    const app = getApp(appId);
-    if (!state.layout.positions[appId]) {
-      state.layout.positions[appId] = gridPosition(index, rect);
-    }
-
-    const pos = state.layout.positions[appId];
-    state.bodies[appId] = state.bodies[appId] || {
-      x: pos.x,
-      y: pos.y,
-      vx: 0,
-      vy: 0,
-      rot: 0,
-      vr: 0
-    };
-    state.bodies[appId].x = pos.x;
-    state.bodies[appId].y = pos.y;
-
-    appSpace.appendChild(createHomeIcon(appId));
+  state.layout.home.forEach((id, index) => {
+    const saved = state.layout.positions[id] || gridPos(index);
+    const body = state.bodies[id] || { x: saved.x, y: saved.y, vx: 0, vy: 0, rot: 0, vr: 0 };
+    body.x = Number.isFinite(saved.x) ? saved.x : gridPos(index).x;
+    body.y = Number.isFinite(saved.y) ? saved.y : gridPos(index).y;
+    state.bodies[id] = body;
+    appArea.appendChild(makeIcon(id));
   });
 
   renderDock();
-  applyBodyPositions();
+  applyPositions();
   saveLayout();
 }
 
 function renderDock() {
   const dock = $("#dock");
   dock.innerHTML = "";
-  state.layout.dock.filter(id => getApp(id)).slice(0, 4).forEach(id => {
-    const app = getApp(id);
+
+  state.layout.dock.forEach(id => {
+    const app = appById(id);
+    if (!app) return;
+
     const btn = document.createElement("button");
-    btn.className = "dock-icon";
     btn.textContent = app.icon || "𓂀";
     btn.title = app.name;
     btn.addEventListener("click", () => openApp(id));
@@ -184,365 +207,290 @@ function renderDock() {
   });
 }
 
-function createHomeIcon(appId) {
-  const app = getApp(appId);
+function makeIcon(id) {
+  const app = appById(id);
   const btn = document.createElement("button");
-  btn.className = "app-icon";
-  btn.dataset.appId = appId;
-  btn.innerHTML = `<span class="glyph">${app.icon || "𓂀"}</span><b>${escapeHtml(app.name || app.id)}</b>`;
+  btn.className = "appIcon";
+  btn.dataset.id = id;
+  btn.innerHTML = `<span class="glyph">${app.icon || "𓂀"}</span><b>${escapeText(app.name || id)}</b>`;
 
-  btn.addEventListener("pointerdown", (e) => {
-    if (state.locked) return;
-    const body = state.bodies[appId];
-    const now = performance.now();
-
-    state.pointerStart = {
-      id: appId,
-      x: e.clientX,
-      y: e.clientY,
+  btn.addEventListener("pointerdown", event => {
+    const body = state.bodies[id];
+    state.pointer = {
+      id,
+      startX: event.clientX,
+      startY: event.clientY,
       bodyX: body.x,
       bodyY: body.y,
-      time: now
+      time: performance.now()
     };
 
     if (state.moving || state.gravity) {
-      state.grabbed = appId;
-      btn.setPointerCapture(e.pointerId);
-      btn.classList.add("grabbed");
+      state.grabbed = id;
       body.vx = 0;
       body.vy = 0;
+      btn.classList.add("dragging");
+      btn.setPointerCapture(event.pointerId);
     }
   });
 
-  btn.addEventListener("pointermove", (e) => {
-    if (state.grabbed !== appId || !state.pointerStart) return;
-    const body = state.bodies[appId];
-    const rect = getSpaceSize();
-    const dx = e.clientX - state.pointerStart.x;
-    const dy = e.clientY - state.pointerStart.y;
-    body.x = clamp(state.pointerStart.bodyX + dx, 0, rect.w - 76);
-    body.y = clamp(state.pointerStart.bodyY + dy, 0, rect.h - 88);
+  btn.addEventListener("pointermove", event => {
+    if (state.grabbed !== id || !state.pointer) return;
+
+    const body = state.bodies[id];
+    const area = appAreaSize();
+    const dx = event.clientX - state.pointer.startX;
+    const dy = event.clientY - state.pointer.startY;
+
+    body.x = clamp(state.pointer.bodyX + dx, 0, area.w - 78);
+    body.y = clamp(state.pointer.bodyY + dy, 0, area.h - 90);
     body.rot = dx * 0.08;
-    body.vx = dx * 0.25;
-    body.vy = dy * 0.25;
-    state.layout.positions[appId] = { x: body.x, y: body.y };
-    applyBodyPositions();
+    state.layout.positions[id] = { x: body.x, y: body.y };
+    applyPositions();
   });
 
-  btn.addEventListener("pointerup", (e) => {
-    const start = state.pointerStart;
-    const body = state.bodies[appId];
-    btn.classList.remove("grabbed");
+  btn.addEventListener("pointerup", event => {
+    btn.classList.remove("dragging");
 
-    if (state.grabbed === appId && start) {
-      const dt = Math.max(1, performance.now() - start.time);
-      const dx = e.clientX - start.x;
-      const dy = e.clientY - start.y;
+    if (!state.pointer) return;
 
-      // Swipe to throw/move apps.
-      if (Math.hypot(dx, dy) > 26) {
-        body.vx = dx / dt * 18;
-        body.vy = dy / dt * 18;
+    const dx = event.clientX - state.pointer.startX;
+    const dy = event.clientY - state.pointer.startY;
+    const distance = Math.hypot(dx, dy);
+    const body = state.bodies[id];
+
+    if (state.grabbed === id) {
+      const time = Math.max(16, performance.now() - state.pointer.time);
+
+      if (distance > 20) {
+        body.vx = dx / time * 20;
+        body.vy = dy / time * 20;
         body.vr = dx * 0.03;
-        notify("App swiped", `${getApp(appId).name} got shoved across the slab.`);
       }
 
-      state.layout.positions[appId] = { x: body.x, y: body.y };
+      state.layout.positions[id] = { x: body.x, y: body.y };
       saveLayout();
-    }
-
-    if (!state.moving && !state.gravity && start) {
-      const dx = e.clientX - start.x;
-      const dy = e.clientY - start.y;
-      if (Math.hypot(dx, dy) < 12) openApp(appId);
+    } else if (distance < 10) {
+      openApp(id);
     }
 
     state.grabbed = null;
-    state.pointerStart = null;
+    state.pointer = null;
   });
 
   btn.addEventListener("pointercancel", () => {
-    btn.classList.remove("grabbed");
+    btn.classList.remove("dragging");
     state.grabbed = null;
-    state.pointerStart = null;
+    state.pointer = null;
   });
 
   return btn;
 }
 
-function applyBodyPositions() {
-  $$(".app-icon[data-app-id]").forEach(el => {
-    const id = el.dataset.appId;
+function applyPositions() {
+  $$(".appIcon").forEach(icon => {
+    const id = icon.dataset.id;
     const body = state.bodies[id];
     if (!body) return;
-    el.style.left = `${body.x}px`;
-    el.style.top = `${body.y}px`;
-    el.style.transform = `rotate(${body.rot}deg)`;
+
+    icon.style.left = `${body.x}px`;
+    icon.style.top = `${body.y}px`;
+    icon.style.transform = `rotate(${body.rot || 0}deg)`;
   });
 }
 
-function gridPosition(index, rect) {
-  const col = index % 3;
-  const row = Math.floor(index / 3);
-  const gapX = Math.max(90, rect.w / 3);
-  const gapY = 100;
-  return {
-    x: clamp(10 + col * gapX, 0, rect.w - 76),
-    y: clamp(8 + row * gapY, 0, rect.h - 88)
-  };
-}
-
-function getSpaceSize() {
-  const el = $("#appSpace");
-  const rect = el.getBoundingClientRect();
-  return { w: Math.max(rect.width, 300), h: Math.max(rect.height, 360) };
-}
-
-function tick(now) {
-  const dt = Math.min(0.033, (now - state.lastTime) / 1000);
-  state.lastTime = now;
-
-  if (state.gravity && $("#homeView").classList.contains("active")) {
-    physicsStep(dt);
-    applyBodyPositions();
-  }
-
-  if (state.tilt) {
-    const tiltX = state.sensorTilt.x || state.phoneTilt.x;
-    const tiltY = state.sensorTilt.y || state.phoneTilt.y;
-    $("#phoneShell").style.transform = `rotateX(${clamp(-tiltY, -12, 12)}deg) rotateY(${clamp(tiltX, -12, 12)}deg)`;
-  } else {
-    $("#phoneShell").style.transform = "";
-  }
-
-  requestAnimationFrame(tick);
-}
-
 function physicsStep(dt) {
-  const rect = getSpaceSize();
-  const gravityX = state.tilt ? state.phoneTilt.x * 35 + state.sensorTilt.x * 18 : 0;
-  const gravityY = 650 + (state.tilt ? state.phoneTilt.y * 22 + state.sensorTilt.y * 10 : 0);
+  const area = appAreaSize();
 
-  for (const id of state.layout.home) {
+  state.layout.home.forEach(id => {
     const body = state.bodies[id];
-    if (!body || state.grabbed === id) continue;
+    if (!body || state.grabbed === id) return;
 
-    body.vx += gravityX * dt;
-    body.vy += gravityY * dt;
+    const tiltX = state.tilt ? state.mouseTiltX * 28 : 0;
+    const tiltY = state.tilt ? state.mouseTiltY * 16 : 0;
+
+    body.vx += tiltX * dt;
+    body.vy += (650 + tiltY) * dt;
 
     body.x += body.vx * dt;
     body.y += body.vy * dt;
-    body.rot += body.vr * dt;
+    body.rot += (body.vr || 0) * dt;
 
     body.vx *= 0.992;
     body.vy *= 0.992;
-    body.vr *= 0.985;
+    body.vr = (body.vr || 0) * 0.985;
 
-    if (body.x < 0) { body.x = 0; body.vx *= -0.62; body.vr += body.vy * 0.015; }
-    if (body.x > rect.w - 76) { body.x = rect.w - 76; body.vx *= -0.62; body.vr -= body.vy * 0.015; }
-    if (body.y < 0) { body.y = 0; body.vy *= -0.55; }
-    if (body.y > rect.h - 88) { body.y = rect.h - 88; body.vy *= -0.5; body.vx *= 0.92; body.vr += body.vx * 0.03; }
+    if (body.x < 0) { body.x = 0; body.vx *= -0.58; }
+    if (body.x > area.w - 78) { body.x = area.w - 78; body.vx *= -0.58; }
+    if (body.y < 0) { body.y = 0; body.vy *= -0.52; }
+    if (body.y > area.h - 90) {
+      body.y = area.h - 90;
+      body.vy *= -0.46;
+      body.vx *= 0.93;
+    }
 
     state.layout.positions[id] = { x: body.x, y: body.y };
-  }
-
-  collideIcons();
+  });
 }
 
-function collideIcons() {
-  const ids = state.layout.home;
-  for (let i = 0; i < ids.length; i++) {
-    for (let j = i + 1; j < ids.length; j++) {
-      const a = state.bodies[ids[i]];
-      const b = state.bodies[ids[j]];
-      if (!a || !b) continue;
+function animate(now) {
+  const dt = Math.min(0.035, (now - state.lastFrame) / 1000);
+  state.lastFrame = now;
 
-      const ax = a.x + 38, ay = a.y + 38;
-      const bx = b.x + 38, by = b.y + 38;
-      const dx = bx - ax, dy = by - ay;
-      const dist = Math.hypot(dx, dy);
-      const minDist = 58;
-
-      if (dist > 0 && dist < minDist) {
-        const nx = dx / dist, ny = dy / dist;
-        const push = (minDist - dist) * 0.5;
-
-        if (state.grabbed !== ids[i]) {
-          a.x -= nx * push;
-          a.y -= ny * push;
-          a.vx -= nx * 18;
-          a.vy -= ny * 18;
-        }
-        if (state.grabbed !== ids[j]) {
-          b.x += nx * push;
-          b.y += ny * push;
-          b.vx += nx * 18;
-          b.vy += ny * 18;
-        }
-      }
-    }
+  if (state.gravity && $("#homeView").classList.contains("active")) {
+    physicsStep(dt);
+    applyPositions();
   }
+
+  if (state.tilt) {
+    $("#phone").style.transform = `rotateX(${clamp(-state.mouseTiltY / 2, -10, 10)}deg) rotateY(${clamp(state.mouseTiltX / 2, -10, 10)}deg)`;
+  } else {
+    $("#phone").style.transform = "";
+  }
+
+  requestAnimationFrame(animate);
 }
 
 function toggleGravity() {
   state.gravity = !state.gravity;
-  $("#gravityToggle").textContent = state.gravity ? "Gravity ✓" : "Gravity";
-  $("#quickGravity").textContent = state.gravity ? "Gravity ✓" : "Gravity";
-  $("#modeText").textContent = state.gravity ? "GRAV" : "HOME";
-  notify("Gravity", state.gravity ? "Apps now fall and bump around." : "Apps stopped falling.");
+  if (state.gravity) showView("#homeView");
+  renderHome();
+  notify("Gravity", state.gravity ? "Apps now fall." : "Apps stopped falling.");
+}
+
+function toggleMove() {
+  state.moving = !state.moving;
+  renderHome();
+  notify("Move", state.moving ? "Drag or swipe apps." : "Move mode off.");
 }
 
 function toggleTilt() {
   state.tilt = !state.tilt;
-  $("#quickTilt").textContent = state.tilt ? "Tilt ✓" : "Tilt";
-  notify("Tilt", state.tilt ? "Move your mouse, or tilt your device if supported." : "Tilt mode disabled.");
+  renderHome();
+  notify("Tilt", state.tilt ? "Phone tilt enabled." : "Phone tilt disabled.");
 }
 
-function chaosApps() {
-  const rect = getSpaceSize();
-  for (const id of state.layout.home) {
+function chaos() {
+  state.gravity = true;
+  state.layout.home.forEach(id => {
     const body = state.bodies[id];
-    if (!body) continue;
+    if (!body) return;
     body.vx = (Math.random() - 0.5) * 900;
     body.vy = (Math.random() - 0.9) * 800;
-    body.vr = (Math.random() - 0.5) * 300;
-    body.x = clamp(body.x, 0, rect.w - 76);
-    body.y = clamp(body.y, 0, rect.h - 88);
-  }
-  state.gravity = true;
+    body.vr = (Math.random() - 0.5) * 240;
+  });
   renderHome();
-  notify("Chaos", "The icons have been cursed.");
+  notify("Chaos", "Apps have been thrown.");
 }
 
 function resetLayout() {
+  localStorage.removeItem(STORE.layout);
   state.layout = defaultLayout();
   state.bodies = {};
-  saveLayout();
   renderHome();
-  notify("Layout reset", "Apps returned to their ancient grid.");
+  notify("Reset", "Layout fixed.");
 }
 
-function spawnRandomApp() {
-  const id = `spawned-${Date.now()}`;
-  const icons = ["🪲", "🏺", "🧱", "🌵", "🔥", "👁️", "🦴", "🧿"];
-  const app = {
-    id,
-    name: `Relic ${state.customApps.length + 1}`,
-    icon: icons[Math.floor(Math.random() * icons.length)],
-    type: "text",
-    description: "Randomly spawned relic app.",
-    content: {
-      title: "Random Relic",
-      body: "This app was spawned from the helper panel."
-    }
-  };
-  state.customApps.push(app);
-  saveCustomApps();
-  state.layout.home.push(id);
-  state.layout.positions[id] = gridPosition(state.layout.home.length - 1, getSpaceSize());
-  saveLayout();
-  renderHome();
-  notify("Random app spawned", app.name);
-}
-
-function openApp(appId) {
-  const app = getApp(appId);
+function openApp(id) {
+  const app = appById(id);
   if (!app) return;
 
   if (app.type === "link") {
-    openLinkApp(app);
+    openLink(app);
     return;
   }
 
-  $("#appTitle").textContent = app.name || app.id;
+  $("#appTitle").textContent = app.name || id;
   $("#appDesc").textContent = app.description || "Ancient app";
   $("#appContent").innerHTML = renderApp(app);
   showView("#appView");
-  $("#modeText").textContent = "APP";
+  screenMode("APP");
 
-  if (app.type === "debug") attachDebugEvents();
-  if (app.type === "notes") attachNotesEvents();
-  if (app.type === "calculator") attachCalcEvents();
-  if (app.type === "settings") attachSettingsEvents();
+  if (app.type === "notes") attachNotes();
+  if (app.type === "calculator") attachCalc();
+  if (app.type === "settings") attachSettings();
+  if (app.type === "debug") attachDebug();
 }
 
-function openLinkApp(app) {
-  const url = app.url || "#";
-  if (app.openInNewTab !== false) {
-    window.open(url, "_blank", "noopener,noreferrer");
-    notify("Opening link", `${app.name} opened in a new tab.`);
+function openLink(app) {
+  if (!app.url) return;
+  if (app.openInNewTab === false) {
+    location.href = app.url;
   } else {
-    location.href = url;
+    window.open(app.url, "_blank", "noopener,noreferrer");
+    notify("Link", `Opening ${app.name}.`);
   }
 }
 
 function renderApp(app) {
-  switch (app.type) {
-    case "debug": return renderDebugApp();
-    case "notes":
-      return `<textarea class="note-box" id="noteBox" spellcheck="false">${escapeHtml(state.note)}</textarea>
-              <div class="app-card"><p>This saves in this browser.</p></div>`;
-    case "settings":
-      return `<div class="setting-row"><div><strong>Gravity Apps</strong><span>Make icons fall and bounce.</span></div><button class="app-action" id="settingsGravity">Toggle</button></div>
-              <div class="setting-row"><div><strong>Phone Tilt</strong><span>Phone follows mouse/device tilt.</span></div><button class="app-action" id="settingsTilt">Toggle</button></div>
-              <div class="setting-row"><div><strong>Sandstorm</strong><span>Moving sand background.</span></div><button class="app-action" id="settingsSand">Toggle</button></div>
-              <div class="setting-row"><div><strong>Theme</strong><span>Cycle ancient colors.</span></div><button class="app-action" id="settingsTheme">Change</button></div>
-              <div class="setting-row"><div><strong>Layout</strong><span>Reset app positions.</span></div><button class="app-action" id="settingsReset">Reset</button></div>`;
-    case "list":
-      return `<div class="app-card"><h3>${escapeHtml(app.name)}</h3><p>${escapeHtml(app.description || "")}</p></div>` +
-        (app.items || []).map(item => `<div class="app-card"><strong>${escapeHtml(item)}</strong><span>Relic entry</span></div>`).join("");
-    case "folder":
-      return `<div class="folder-panel"><h3>${escapeHtml(app.name)}</h3><span>${escapeHtml(app.description || "Grouped apps")}</span>
-        <div class="folder-grid">${(app.children || []).filter(getApp).map(id => {
-          const child = getApp(id);
-          return `<button class="folder-app" data-folder-open="${child.id}">
-            <span class="glyph">${child.icon || "𓂀"}</span><b>${escapeHtml(child.name)}</b>
-          </button>`;
-        }).join("")}</div></div>`;
-    case "calculator": return renderCalculator();
-    case "camera":
-      return `<div class="app-card" style="min-height:260px;display:grid;place-items:center;font-size:4rem;">📷</div>
-              <div class="app-card"><h3>Ancient Lens</h3><p>This is a safe fake camera app for static sites.</p></div>`;
-    case "html": return `<div class="app-card">${app.html || ""}</div>`;
-    case "text":
-    default:
-      const title = app.content?.title || app.name || "Text App";
-      const body = app.content?.body || app.description || "Edit this app in config.js.";
-      return `<div class="app-card"><h3>${escapeHtml(title)}</h3><p>${escapeHtml(body).replaceAll("\n", "<br>")}</p></div>`;
+  if (app.type === "notes") {
+    return `<textarea id="noteBox" class="noteBox" spellcheck="false">${escapeText(state.note)}</textarea><div class="card"><p>Notes save in this browser.</p></div>`;
   }
+
+  if (app.type === "settings") {
+    return `
+      <div class="setting"><div><strong>Gravity</strong><span>Apps fall and bounce.</span></div><button id="setGravity" class="actionBtn">Toggle</button></div>
+      <div class="setting"><div><strong>Move Mode</strong><span>Drag/swipe apps.</span></div><button id="setMove" class="actionBtn">Toggle</button></div>
+      <div class="setting"><div><strong>Tilt</strong><span>Phone reacts to mouse.</span></div><button id="setTilt" class="actionBtn">Toggle</button></div>
+      <div class="setting"><div><strong>Sandstorm</strong><span>Animated sand.</span></div><button id="setSand" class="actionBtn">Toggle</button></div>
+      <div class="setting"><div><strong>Theme</strong><span>Change ancient colors.</span></div><button id="setTheme" class="actionBtn">Change</button></div>
+      <div class="setting"><div><strong>Reset</strong><span>Fix app positions.</span></div><button id="setReset" class="actionBtn">Reset</button></div>
+    `;
+  }
+
+  if (app.type === "debug") return renderDebug();
+
+  if (app.type === "calculator") {
+    return `<div id="calcDisplay" class="calcDisplay">${escapeText(state.calc)}</div>
+      <div class="calcKeys">${["7","8","9","C","4","5","6","+","1","2","3","-","0",".","=","×"].map(k => `<button data-calc="${k}">${k}</button>`).join("")}</div>`;
+  }
+
+  if (app.type === "camera") {
+    return `<div class="card" style="min-height:250px;display:grid;place-items:center;font-size:4rem;">📷</div><div class="card"><h3>Ancient Lens</h3><p>Fake camera for a static site.</p></div>`;
+  }
+
+  if (app.type === "list") {
+    return `<div class="card"><h3>${escapeText(app.name)}</h3><p>${escapeText(app.description || "")}</p></div>` +
+      (app.items || []).map(item => `<div class="card"><strong>${escapeText(item)}</strong><p>Relic entry</p></div>`).join("");
+  }
+
+  if (app.type === "folder") {
+    const children = (app.children || []).filter(id => appById(id));
+    return `<div class="card"><h3>${escapeText(app.name)}</h3><p>${escapeText(app.description || "")}</p>
+      <div class="folderGrid">${children.map(id => {
+        const child = appById(id);
+        return `<button data-folder-open="${child.id}"><span class="glyph">${child.icon || "𓂀"}</span><b>${escapeText(child.name)}</b></button>`;
+      }).join("")}</div></div>`;
+  }
+
+  if (app.type === "html") {
+    return `<div class="card">${app.html || ""}</div>`;
+  }
+
+  const title = app.content?.title || app.name || "Text";
+  const body = app.content?.body || app.description || "Edit this in config.js.";
+  return `<div class="card"><h3>${escapeText(title)}</h3><p>${escapeText(body).replaceAll("\\n", "<br>")}</p></div>`;
 }
 
-function renderCalculator() {
-  return `<div class="calc-display" id="calcDisplay">${escapeHtml(state.calc)}</div>
-    <div class="calc-keys">
-      ${["7","8","9","C","4","5","6","+","1","2","3","-","0",".","=","×"].map(k => `<button data-calc="${k}">${k}</button>`).join("")}
-    </div>`;
-}
-
-function renderDebugApp() {
-  const customCards = state.customApps.map(app => `
-    <div class="app-card">
-      <strong>${escapeHtml(app.icon || "𓂀")} ${escapeHtml(app.name)}</strong>
-      <span>ID: ${escapeHtml(app.id)} / Type: ${escapeHtml(app.type)}</span>
-      <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.65rem;">
-        <button class="app-action" data-edit-app="${app.id}">Edit</button>
-        <button class="app-action" data-delete-app="${app.id}">Delete</button>
-      </div>
+function renderDebug() {
+  const cards = state.customApps.map(app => `
+    <div class="card">
+      <strong>${escapeText(app.icon || "𓂀")} ${escapeText(app.name)}</strong>
+      <p>ID: ${escapeText(app.id)} / Type: ${escapeText(app.type)}</p>
+      <button class="actionBtn" data-edit="${app.id}">Edit</button>
+      <button class="actionBtn" data-delete="${app.id}">Delete</button>
     </div>
   `).join("");
 
   return `
-    <div class="app-card">
-      <h3>Debug / App Creator</h3>
-      <p>Create local apps, including website link apps. Use Export to copy JSON into config.js later.</p>
-    </div>
-    <form class="debug-form" id="debugForm">
-      <input type="hidden" id="debugOriginalId" />
-      <div class="debug-row">
-        <label>Name <input id="debugName" placeholder="My Site" required /></label>
-        <label>Icon <input id="debugIcon" placeholder="🌐" maxlength="4" /></label>
+    <div class="card"><h3>Debug / App Creator</h3><p>Create local apps. For permanent apps, copy exported JSON into config.js.</p></div>
+    <form id="debugForm" class="debugForm">
+      <input id="originalId" type="hidden" />
+      <div class="formRow">
+        <label>Name <input id="debugName" required placeholder="My Site"></label>
+        <label>Icon <input id="debugIcon" maxlength="4" placeholder="🌐"></label>
       </div>
-      <label>ID <input id="debugId" placeholder="my-site" required /></label>
+      <label>ID <input id="debugId" required placeholder="my-site"></label>
       <label>Type
         <select id="debugType">
           <option value="link">Website Link</option>
@@ -551,31 +499,73 @@ function renderDebugApp() {
           <option value="html">HTML</option>
         </select>
       </label>
-      <label>Description <input id="debugDesc" placeholder="What does this app do?" /></label>
-      <label>URL or Content <textarea id="debugContent" rows="5" placeholder="https://example.com OR app text/list/html"></textarea></label>
-      <div class="debug-row">
-        <button type="submit">Save App</button>
-        <button type="button" id="clearDebugForm">Clear</button>
+      <label>Description <input id="debugDesc" placeholder="What does this app do?"></label>
+      <label>URL / Content <textarea id="debugBody" rows="5" placeholder="https://example.com OR text/list/html"></textarea></label>
+      <div class="formRow">
+        <button type="submit">Save</button>
+        <button type="button" id="clearDebug">Clear</button>
       </div>
-      <button type="button" id="exportApps">Copy Custom App JSON</button>
+      <button type="button" id="copyCustom">Copy Custom App JSON</button>
     </form>
-    <div class="app-card"><h3>Custom Apps</h3><p>${state.customApps.length ? "Saved on this device:" : "No custom apps yet."}</p></div>
-    ${customCards}
+    ${cards || `<div class="card"><p>No custom apps yet.</p></div>`}
   `;
 }
 
-function attachDebugEvents() {
-  $("#debugForm").addEventListener("submit", (e) => {
-    e.preventDefault();
-    const originalId = $("#debugOriginalId").value.trim();
+function attachNotes() {
+  $("#noteBox").addEventListener("input", event => {
+    state.note = event.target.value;
+    localStorage.setItem(STORE.note, state.note);
+  });
+}
+
+function attachSettings() {
+  $("#setGravity").addEventListener("click", toggleGravity);
+  $("#setMove").addEventListener("click", toggleMove);
+  $("#setTilt").addEventListener("click", toggleTilt);
+  $("#setSand").addEventListener("click", () => $("#phone").classList.toggle("sandstorm"));
+  $("#setTheme").addEventListener("click", cycleTheme);
+  $("#setReset").addEventListener("click", resetLayout);
+}
+
+function attachCalc() {
+  $$("[data-calc]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const key = btn.dataset.calc;
+
+      if (key === "C") state.calc = "0";
+      else if (key === "=") {
+        try {
+          const result = Function(`"use strict"; return (${state.calc.replaceAll("×", "*")})`)();
+          state.calc = Number.isFinite(result) ? String(Math.round(result * 100000) / 100000) : "Nope";
+        } catch {
+          state.calc = "Nope";
+        }
+      } else {
+        if (state.calc === "0" || state.calc === "Nope") state.calc = "";
+        state.calc += key;
+      }
+
+      $("#calcDisplay").textContent = state.calc;
+    });
+  });
+}
+
+function attachDebug() {
+  $("#debugForm").addEventListener("submit", event => {
+    event.preventDefault();
+
+    const originalId = $("#originalId").value.trim();
     const id = slug($("#debugId").value);
     const name = $("#debugName").value.trim();
     const icon = $("#debugIcon").value.trim() || "𓂀";
     const type = $("#debugType").value;
     const description = $("#debugDesc").value.trim();
-    const raw = $("#debugContent").value.trim();
+    const raw = $("#debugBody").value.trim();
 
-    if (!id || !name) return notify("Missing info", "App needs a name and ID.");
+    if (!id || !name) {
+      notify("Missing", "App needs an ID and name.");
+      return;
+    }
 
     const app = { id, name, icon, type, description };
 
@@ -583,7 +573,7 @@ function attachDebugEvents() {
       app.url = raw || "https://example.com";
       app.openInNewTab = true;
     } else if (type === "list") {
-      app.items = raw.split("\n").map(x => x.trim()).filter(Boolean);
+      app.items = raw.split("\\n").map(x => x.trim()).filter(Boolean);
     } else if (type === "html") {
       app.html = raw;
     } else {
@@ -596,183 +586,158 @@ function attachDebugEvents() {
 
     if (originalId && originalId !== id) {
       state.layout.home = state.layout.home.filter(x => x !== originalId);
-      state.layout.dock = state.layout.dock.filter(x => x !== originalId);
       delete state.layout.positions[originalId];
       delete state.bodies[originalId];
     }
 
     if (!state.layout.home.includes(id) && !state.layout.dock.includes(id)) {
       state.layout.home.push(id);
-      state.layout.positions[id] = gridPosition(state.layout.home.length - 1, getSpaceSize());
+      state.layout.positions[id] = gridPos(state.layout.home.length - 1);
     }
 
     saveLayout();
-    notify("App saved", name);
     renderHome();
+    notify("Saved", `${name} added.`);
     openApp("debug");
   });
 
-  $("#clearDebugForm").addEventListener("click", () => {
-    ["debugOriginalId", "debugName", "debugIcon", "debugId", "debugDesc", "debugContent"].forEach(id => $("#" + id).value = "");
+  $("#clearDebug").addEventListener("click", () => {
+    ["originalId", "debugName", "debugIcon", "debugId", "debugDesc", "debugBody"].forEach(id => $("#" + id).value = "");
     $("#debugType").value = "link";
   });
 
-  $("#exportApps").addEventListener("click", () => copyText(JSON.stringify(state.customApps, null, 2), "Custom app JSON copied."));
+  $("#copyCustom").addEventListener("click", () => copyText(JSON.stringify(state.customApps, null, 2)));
 
-  $$("[data-delete-app]").forEach(btn => btn.addEventListener("click", () => {
-    const id = btn.dataset.deleteApp;
-    state.customApps = state.customApps.filter(app => app.id !== id);
-    state.layout.home = state.layout.home.filter(x => x !== id);
-    state.layout.dock = state.layout.dock.filter(x => x !== id);
-    delete state.layout.positions[id];
-    delete state.bodies[id];
-    saveCustomApps();
-    saveLayout();
-    notify("App deleted", id);
-    renderHome();
-    openApp("debug");
-  }));
-
-  $$("[data-edit-app]").forEach(btn => btn.addEventListener("click", () => {
-    const app = state.customApps.find(a => a.id === btn.dataset.editApp);
-    if (!app) return;
-    $("#debugOriginalId").value = app.id;
-    $("#debugId").value = app.id;
-    $("#debugName").value = app.name || "";
-    $("#debugIcon").value = app.icon || "";
-    $("#debugType").value = app.type || "text";
-    $("#debugDesc").value = app.description || "";
-    $("#debugContent").value =
-      app.type === "link" ? app.url || ""
-      : app.type === "list" ? (app.items || []).join("\n")
-      : app.type === "html" ? app.html || ""
-      : app.content?.body || "";
-    notify("Editing app", app.name);
-  }));
-}
-
-function attachNotesEvents() {
-  $("#noteBox").addEventListener("input", (e) => {
-    state.note = e.target.value;
-    localStorage.setItem(STORAGE.note, state.note);
+  $$("[data-delete]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.delete;
+      state.customApps = state.customApps.filter(app => app.id !== id);
+      state.layout.home = state.layout.home.filter(x => x !== id);
+      delete state.layout.positions[id];
+      delete state.bodies[id];
+      saveCustomApps();
+      saveLayout();
+      renderHome();
+      notify("Deleted", id);
+      openApp("debug");
+    });
   });
-}
 
-function attachCalcEvents() {
-  $$("[data-calc]").forEach(btn => btn.addEventListener("click", () => {
-    const key = btn.dataset.calc;
-    if (key === "C") state.calc = "0";
-    else if (key === "=") {
-      try {
-        const result = Function(`"use strict"; return (${state.calc.replaceAll("×", "*")})`)();
-        state.calc = Number.isFinite(result) ? String(Math.round(result * 100000) / 100000) : "Nope";
-      } catch {
-        state.calc = "Nope";
-      }
-    } else {
-      if (state.calc === "0" || state.calc === "Nope") state.calc = "";
-      state.calc += key;
-    }
-    $("#calcDisplay").textContent = state.calc;
-  }));
-}
+  $$("[data-edit]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const app = state.customApps.find(a => a.id === btn.dataset.edit);
+      if (!app) return;
 
-function attachSettingsEvents() {
-  $("#settingsGravity").addEventListener("click", toggleGravity);
-  $("#settingsTilt").addEventListener("click", toggleTilt);
-  $("#settingsSand").addEventListener("click", () => $("#phoneShell").classList.toggle("sandstorm"));
-  $("#settingsTheme").addEventListener("click", cycleTheme);
-  $("#settingsReset").addEventListener("click", resetLayout);
-}
-
-function copyText(text, message) {
-  if (navigator.clipboard) navigator.clipboard.writeText(text);
-  notify("Copied", message);
+      $("#originalId").value = app.id;
+      $("#debugName").value = app.name || "";
+      $("#debugIcon").value = app.icon || "";
+      $("#debugId").value = app.id || "";
+      $("#debugType").value = app.type || "text";
+      $("#debugDesc").value = app.description || "";
+      $("#debugBody").value =
+        app.type === "link" ? app.url || "" :
+        app.type === "list" ? (app.items || []).join("\\n") :
+        app.type === "html" ? app.html || "" :
+        app.content?.body || "";
+    });
+  });
 }
 
 function notify(title, body) {
-  const list = $("#notificationList");
-  const article = document.createElement("article");
-  article.innerHTML = `<strong>${escapeHtml(title)}</strong><span>${escapeHtml(body || "")}</span>`;
-  list.prepend(article);
+  const item = document.createElement("article");
+  item.innerHTML = `<strong>${escapeText(title)}</strong><span>${escapeText(body || "")}</span>`;
+  $("#logList").prepend(item);
 }
 
-function toggleShade() {
-  $("#shade").classList.toggle("open");
+function copyText(text) {
+  if (navigator.clipboard) navigator.clipboard.writeText(text);
+  notify("Copied", "JSON copied if clipboard permission allowed.");
 }
 
-function initTilt() {
-  $("#screen").addEventListener("pointermove", (e) => {
-    const rect = $("#screen").getBoundingClientRect();
-    state.phoneTilt.x = ((e.clientX - rect.left) / rect.width - 0.5) * 18;
-    state.phoneTilt.y = ((e.clientY - rect.top) / rect.height - 0.5) * 18;
-  });
+function spawnApp() {
+  const id = `relic-${Date.now()}`;
+  const icons = ["🪲", "🏺", "🧱", "🌵", "🔥", "👁️", "🦴", "🧿"];
+  const app = {
+    id,
+    name: `Relic ${state.customApps.length + 1}`,
+    icon: icons[Math.floor(Math.random() * icons.length)],
+    type: "text",
+    description: "Spawned app.",
+    content: {
+      title: "Random Relic",
+      body: "This app was spawned from the side panel."
+    }
+  };
 
-  window.addEventListener("deviceorientation", (e) => {
-    if (!state.tilt) return;
-    state.sensorTilt.x = clamp(e.gamma || 0, -18, 18);
-    state.sensorTilt.y = clamp(e.beta || 0, -18, 18) / 2;
-  });
+  state.customApps.push(app);
+  saveCustomApps();
+  state.layout.home.push(id);
+  state.layout.positions[id] = gridPos(state.layout.home.length - 1);
+  saveLayout();
+  renderHome();
+  notify("Spawned", app.name);
 }
 
-function initGestures() {
-  let startY = null;
-  $("#screen").addEventListener("touchstart", e => startY = e.touches[0].clientY, { passive: true });
-  $("#screen").addEventListener("touchend", e => {
-    if (startY === null) return;
-    const dy = e.changedTouches[0].clientY - startY;
-    if (state.locked && dy < -45) unlockPhone();
-    if (!state.locked && dy > 55 && startY < 85) toggleShade();
-    startY = null;
-  }, { passive: true });
+function toggleLog() {
+  $("#log").classList.toggle("open");
 }
 
-function slug(value) {
-  return String(value || "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
 }
 
-function clamp(n, min, max) {
-  return Math.max(min, Math.min(max, n));
+function slug(text) {
+  return String(text || "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
 
-function escapeHtml(value) {
+function escapeText(value) {
   return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 }
 
-$("#unlockBtn").addEventListener("click", unlockPhone);
-$("#lockBtn").addEventListener("click", () => state.locked ? unlockPhone() : lockPhone());
-$("#shadeBtn").addEventListener("click", toggleShade);
+$("#unlockBtn").addEventListener("click", unlock);
+$("#powerBtn").addEventListener("click", () => state.locked ? unlock() : lock());
+$("#lockBtn").addEventListener("click", lock);
+$("#logBtn").addEventListener("click", toggleLog);
 $("#backBtn").addEventListener("click", () => {
   showView("#homeView");
-  $("#modeText").textContent = state.gravity ? "GRAV" : state.moving ? "MOVE" : "HOME";
+  screenMode(state.gravity ? "GRAV" : state.moving ? "MOVE" : "HOME");
 });
-$("#gravityToggle").addEventListener("click", toggleGravity);
-$("#quickGravity").addEventListener("click", toggleGravity);
-$("#quickTilt").addEventListener("click", toggleTilt);
-$("#quickLock").addEventListener("click", lockPhone);
+$("#gravityBtn").addEventListener("click", toggleGravity);
+$("#logGravity").addEventListener("click", toggleGravity);
+$("#moveBtn").addEventListener("click", toggleMove);
+$("#chaosBtn").addEventListener("click", chaos);
 $("#themeBtn").addEventListener("click", cycleTheme);
-$("#chaosBtn").addEventListener("click", chaosApps);
 $("#resetBtn").addEventListener("click", resetLayout);
-$("#editToggle").addEventListener("click", () => {
-  state.moving = !state.moving;
-  renderHome();
-  notify("Move mode", state.moving ? "Swipe or drag apps around." : "Move mode disabled.");
-});
+$("#tiltBtn").addEventListener("click", toggleTilt);
 $("#openDebug").addEventListener("click", () => {
-  unlockPhone();
+  unlock();
   openApp("debug");
 });
-$("#spawnApp").addEventListener("click", spawnRandomApp);
-$("#exportLayout").addEventListener("click", () => copyText(JSON.stringify(state.layout, null, 2), "Layout JSON copied."));
+$("#spawnBtn").addEventListener("click", spawnApp);
 
-document.addEventListener("click", (e) => {
-  const folderBtn = e.target.closest("[data-folder-open]");
-  if (folderBtn) openApp(folderBtn.dataset.folderOpen);
+document.addEventListener("click", event => {
+  const folder = event.target.closest("[data-folder-open]");
+  if (folder) openApp(folder.dataset.folderOpen);
 });
 
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") showView(state.locked ? "#lockView" : "#homeView");
+$("#screen").addEventListener("pointermove", event => {
+  const rect = $("#screen").getBoundingClientRect();
+  state.mouseTiltX = ((event.clientX - rect.left) / rect.width - 0.5) * 24;
+  state.mouseTiltY = ((event.clientY - rect.top) / rect.height - 0.5) * 24;
 });
+
+let touchStartY = null;
+$("#screen").addEventListener("touchstart", event => {
+  touchStartY = event.touches[0].clientY;
+}, { passive: true });
+
+$("#screen").addEventListener("touchend", event => {
+  if (touchStartY === null) return;
+  const dy = event.changedTouches[0].clientY - touchStartY;
+  if (state.locked && dy < -45) unlock();
+  if (!state.locked && dy > 55 && touchStartY < 90) toggleLog();
+  touchStartY = null;
+}, { passive: true });
 
 state.layout = loadLayout();
 setTheme(state.themeIndex);
@@ -780,8 +745,6 @@ renderHome();
 updateClock();
 setInterval(updateClock, 1000);
 $("#batteryText").textContent = `${Math.floor(Math.random() * 31) + 66}%`;
-notify("Ready", "Cursed phone mode loaded.");
-notify("Tip", "Enable Move, then swipe icons around. Enable Gravity for falling apps.");
-initTilt();
-initGestures();
-requestAnimationFrame(tick);
+notify("Ready", "Stable patch loaded.");
+notify("Tip", "Move mode + Gravity are safer now.");
+requestAnimationFrame(animate);

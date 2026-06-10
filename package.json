@@ -1,16 +1,9 @@
 {
-  "name": "ancentphone-fun-physics-links",
-  "version": "3.0.0",
-  "description": "Cursed ancient phone UI with link apps, draggable/swipe apps, gravity, tilt, and debug app creator.",
+  "name": "ancentphone-stable-fun-patch",
+  "version": "3.1.0",
+  "description": "Stable AncentPhone patch with website links, draggable apps, gravity, tilt, config.js, and debug app creator.",
   "scripts": {
     "start": "python -m http.server 8000"
   },
-  "keywords": [
-    "phone",
-    "ancient",
-    "physics",
-    "github-pages",
-    "static-site"
-  ],
   "license": "MIT"
 }

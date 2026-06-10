@@ -2,99 +2,87 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AncentPhone</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <main class="stage">
-    <section class="phone-shell" id="phoneShell">
-      <div class="stone-noise"></div>
-      <div class="scarab-notch">𓆣</div>
-      <button class="side side-left" id="shadeBtn" title="Tablet Log"></button>
-      <button class="side side-right" id="lockBtn" title="Lock"></button>
+  <main class="page">
+    <section class="phone" id="phone">
+      <div class="notch">𓆣</div>
 
       <section class="screen" id="screen">
-        <div class="sand"></div>
-        <div class="sun"></div>
-
-        <header class="status-bar">
-          <span id="statusTime">9:41</span>
-          <div class="status-right">
-            <span id="modeText">HOME</span>
-            <span>𓂀</span>
-            <span id="batteryText">88%</span>
-          </div>
+        <header class="status">
+          <span id="timeText">9:41</span>
+          <span id="modeText">HOME</span>
+          <span id="batteryText">88%</span>
         </header>
 
-        <section class="view lock-view active" id="lockView">
-          <div class="lock-center">
-            <div class="glyph-ring">𓂀</div>
-            <div class="lock-date" id="lockDate">Monday, June 9</div>
-            <div class="lock-time" id="lockTime">9:41</div>
-            <p>Swipe up or awaken the ancient slab.</p>
+        <section class="lock view active" id="lockView">
+          <div class="lockCenter">
+            <div class="eye">𓂀</div>
+            <div id="dateText" class="dateText">Monday</div>
+            <div id="lockTime" class="lockTime">9:41</div>
+            <p>Ancient slab asleep in the sand.</p>
           </div>
-          <button class="stone-button" id="unlockBtn">Awaken</button>
+          <button id="unlockBtn" class="pill">Awaken</button>
         </section>
 
-        <section class="view home-view" id="homeView">
-          <div class="top-widget">
+        <section class="home view" id="homeView">
+          <div class="widget">
             <div>
-              <strong id="phoneTitle">AncentPhone</strong>
-              <span id="phoneSubtitle">Ancient cursed smartphone</span>
+              <strong id="phoneName">AncentPhone</strong>
+              <span id="phoneSub">Stable cursed phone</span>
             </div>
-            <button class="small-stone" id="gravityToggle">Gravity</button>
+            <button id="gravityBtn" class="smallBtn">Gravity</button>
           </div>
 
-          <div class="toolbar">
-            <button id="editToggle">Move</button>
+          <div class="controls">
+            <button id="moveBtn">Move</button>
             <button id="chaosBtn">Chaos</button>
             <button id="themeBtn">Theme</button>
             <button id="resetBtn">Reset</button>
           </div>
 
-          <div class="app-space" id="appSpace" aria-label="App space"></div>
+          <div id="appArea" class="appArea"></div>
 
-          <div class="hint-pill" id="hintPill">Tap apps. Swipe icons in Move mode. Gravity makes them fall.</div>
+          <div id="hint" class="hint">Tap apps. Move mode lets you drag/swipe. Gravity makes them fall.</div>
 
-          <nav class="dock" id="dock"></nav>
+          <nav id="dock" class="dock"></nav>
         </section>
 
-        <section class="view app-view" id="appView">
-          <header class="app-header">
-            <button class="round-stone" id="backBtn">‹</button>
+        <section class="app view" id="appView">
+          <div class="appHeader">
+            <button id="backBtn" class="circle">‹</button>
             <div>
               <strong id="appTitle">App</strong>
-              <span id="appDesc">Ancient app</span>
+              <span id="appDesc">Description</span>
             </div>
-          </header>
-          <div class="app-content" id="appContent"></div>
+          </div>
+          <div id="appContent" class="appContent"></div>
         </section>
 
-        <aside class="shade" id="shade">
-          <div class="shade-handle"></div>
+        <aside id="log" class="log">
+          <div class="logHandle"></div>
           <h2>Tablet Log</h2>
-          <div id="notificationList"></div>
-          <div class="quick-actions">
-            <button id="quickGravity">Gravity</button>
-            <button id="quickTilt">Tilt</button>
-            <button id="quickLock">Sleep</button>
+          <div id="logList"></div>
+          <div class="logButtons">
+            <button id="logGravity">Gravity</button>
+            <button id="tiltBtn">Tilt</button>
+            <button id="lockBtn">Sleep</button>
           </div>
         </aside>
       </section>
+
+      <button id="logBtn" class="side leftSide" title="Log"></button>
+      <button id="powerBtn" class="side rightSide" title="Power"></button>
     </section>
 
-    <section class="helper-panel">
+    <section class="sidePanel">
       <h1>AncentPhone</h1>
-      <p>
-        Website-link apps, swipe-moving icons, gravity mode, tilt mode, folders, and a Debug app creator.
-        Edit built-in apps in <code>config.js</code>.
-      </p>
-      <div class="helper-actions">
-        <button id="openDebug">Open Debug</button>
-        <button id="spawnApp">Spawn Random App</button>
-        <button id="exportLayout">Copy Layout</button>
-      </div>
+      <p>Stable patched version with website-link apps, draggable/swipe apps, gravity, tilt, Debug app creator, and config.js.</p>
+      <button id="openDebug">Open Debug</button>
+      <button id="spawnBtn">Spawn App</button>
     </section>
   </main>
 
