@@ -8,111 +8,88 @@
 </head>
 <body>
   <main class="stage">
-    <section class="phone" id="phone">
-      <div class="phone-glow"></div>
+    <section class="phone-shell" id="phoneShell">
+      <div class="crack crack-a"></div>
+      <div class="crack crack-b"></div>
+      <div class="scarab">𓆣</div>
 
-      <div class="screen" id="screen">
-        <div class="wallpaper-blobs">
-          <span></span><span></span><span></span>
-        </div>
+      <section class="screen" id="screen">
+        <div class="sand-layer"></div>
+        <div class="sun-orb"></div>
 
-        <header class="status-bar" id="statusBar">
+        <header class="status-bar">
           <span id="statusTime">9:41</span>
-          <div class="status-icons">
-            <span class="signal">▰▰▰</span>
-            <span class="wifi">◜◝</span>
-            <span id="batteryText">87%</span>
-            <span class="battery"><i id="batteryFill"></i></span>
+          <div class="status-right">
+            <span id="pageText">I</span>
+            <span>𓂀</span>
+            <span id="batteryText">88%</span>
           </div>
         </header>
 
-        <section class="lock-screen view active" id="lockScreen" aria-label="Lock screen">
-          <div class="lock-center">
-            <div class="lock-date" id="lockDate">Monday, January 1</div>
+        <section class="view lock-view active" id="lockView">
+          <div class="lock-art">
+            <div class="glyph-ring">𓂀</div>
+            <div class="lock-date" id="lockDate">Monday, June 9</div>
             <div class="lock-time" id="lockTime">9:41</div>
-            <div class="lock-card">
-              <strong>AncentPhone</strong>
-              <span>Swipe up or press unlock.</span>
-            </div>
+            <p>The ancient slab sleeps beneath the sand.</p>
           </div>
-          <button class="unlock-btn" id="unlockBtn">Unlock</button>
+          <button class="stone-button" id="unlockBtn">Awaken</button>
         </section>
 
-        <section class="home-screen view" id="homeScreen" aria-label="Home screen">
-          <div class="dynamic-island" id="dynamicIsland">AncentPhone</div>
-
-          <div class="widget-card">
+        <section class="view home-view" id="homeView">
+          <div class="top-widget">
             <div>
-              <strong id="widgetGreeting">Good day</strong>
-              <span id="widgetSub">Ready to derp.</span>
+              <strong id="phoneTitle">AncentPhone</strong>
+              <span id="phoneSubtitle">Sand-powered rectangle</span>
             </div>
-            <button id="themeQuick">Theme</button>
+            <button class="small-stone" id="editToggle">Edit</button>
           </div>
 
-          <div class="app-grid" id="appGrid">
-            <button class="app-icon" data-app="messages"><span>💬</span><b>Messages</b></button>
-            <button class="app-icon" data-app="notes"><span>📝</span><b>Notes</b></button>
-            <button class="app-icon" data-app="camera"><span>📷</span><b>Camera</b></button>
-            <button class="app-icon" data-app="music"><span>🎵</span><b>Music</b></button>
-            <button class="app-icon" data-app="weather"><span>☁️</span><b>Weather</b></button>
-            <button class="app-icon" data-app="settings"><span>⚙️</span><b>Settings</b></button>
-            <button class="app-icon" data-app="browser"><span>🌐</span><b>Browser</b></button>
-            <button class="app-icon" data-app="files"><span>📁</span><b>Files</b></button>
-            <button class="app-icon" data-app="calculator"><span>🧮</span><b>Calc</b></button>
-          </div>
+          <div class="pages" id="pages"></div>
 
-          <nav class="dock">
-            <button class="dock-icon" data-app="messages">💬</button>
-            <button class="dock-icon" data-app="browser">🌐</button>
-            <button class="dock-icon" data-app="music">🎵</button>
-            <button class="dock-icon" data-app="settings">⚙️</button>
-          </nav>
+          <div class="page-dots" id="pageDots"></div>
+
+          <nav class="dock" id="dock"></nav>
         </section>
 
-        <section class="app-window view" id="appWindow" aria-label="App window">
-          <div class="app-header">
-            <button id="backHome" class="round-btn">‹</button>
+        <section class="view app-view" id="appView">
+          <header class="app-header">
+            <button class="round-stone" id="backBtn">‹</button>
             <div>
               <strong id="appTitle">App</strong>
-              <span id="appSubtitle">AncentPhone</span>
+              <span id="appDesc">Ancient application</span>
             </div>
-          </div>
+          </header>
           <div class="app-content" id="appContent"></div>
         </section>
 
-        <aside class="notification-shade" id="notificationShade">
+        <aside class="shade" id="shade">
           <div class="shade-handle"></div>
-          <h2>Notifications</h2>
-          <article>
-            <strong>Welcome</strong>
-            <span>AncentPhone has a new phone-style UI.</span>
-          </article>
-          <article>
-            <strong>Tip</strong>
-            <span>Tap apps, use the dock, or open Settings to change the theme.</span>
-          </article>
-          <div class="quick-row">
-            <button data-quick="wifi">Wi-Fi</button>
-            <button data-quick="focus">Focus</button>
-            <button data-quick="bright">Bright</button>
+          <h2>Tablet Log</h2>
+          <div id="notificationList"></div>
+          <div class="quick-actions">
+            <button id="quickTheme">Theme</button>
+            <button id="quickSand">Sandstorm</button>
+            <button id="quickLock">Sleep</button>
           </div>
         </aside>
-      </div>
+      </section>
 
-      <button class="side-button side-left" id="shadeBtn" title="Notifications"></button>
-      <button class="side-button side-right" id="powerBtn" title="Lock"></button>
+      <button class="side side-left" id="shadeBtn" title="Tablet Log"></button>
+      <button class="side side-right" id="lockBtn" title="Lock"></button>
     </section>
 
-    <section class="info-panel">
+    <section class="helper-panel">
       <h1>AncentPhone</h1>
-      <p>A cleaner fake phone UI for your repo. Works on desktop and mobile.</p>
-      <div class="mini-actions">
-        <button id="demoNotify">Fake notification</button>
-        <button id="lockNow">Lock phone</button>
+      <p>Edit apps in <code>config.js</code>, drag icons while in Edit mode, create apps in Debug, and organize folders.</p>
+      <div class="helper-actions">
+        <button id="resetLayout">Reset layout</button>
+        <button id="openDebug">Open Debug</button>
       </div>
     </section>
   </main>
 
+  <script src="config.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

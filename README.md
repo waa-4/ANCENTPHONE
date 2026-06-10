@@ -1,79 +1,100 @@
-# AncentPhone - Phone UI Upgrade
+# AncentPhone - Ancient Configurable Phone UI
 
-This is a cleaner, more phone-like web UI for **ancentphone**.
+This is a more ancient-looking, configurable version of **AncentPhone**.
 
-## What is included
+## Main features
 
-- Polished phone frame
-- Lock screen
-- Swipe-up/tap unlock
-- Live clock/date
-- Status bar
-- Home screen
-- App icons
-- Bottom dock
-- Notification shade
-- Fake apps:
-  - Messages
-  - Notes
-  - Camera
-  - Music
-  - Weather
-  - Settings
-  - Browser
-  - Files
-  - Calculator
+- Sand/stone/ancient phone design
+- `config.js` for built-in custom apps
+- Multiple home screen pages
+- Swipe left/right on mobile to change pages
+- Page dots
+- Dock
+- Edit mode for moving apps
+- Drag app icons on desktop
+- Touch-friendly move helper on mobile
+- Folders/groups
+- Debug app that creates custom apps
+- Custom apps saved with `localStorage`
 - Theme switching
-- Mobile-friendly layout
-- Local note saving with `localStorage`
+- Sandstorm visual toggle
+- Notes app
+- Calculator app
+- List/text/html custom app types
 
-## How to use
-
-Extract this zip into your repo.
-
-For GitHub Pages, the important files are:
+## Files
 
 - `index.html`
 - `style.css`
 - `script.js`
+- `config.js`
 
-If your repo already has these files, back them up first or replace them with these.
+## How to install
 
-## Easy editing
+Extract this zip into your repo.
 
-### Change app names/icons
+If your repo already has `index.html`, `style.css`, `script.js`, or `config.js`, back them up first.
 
-Open `index.html` and edit the buttons inside:
+## Editing apps in config.js
 
-```html
-<div class="app-grid" id="appGrid">
-```
+Open `config.js`.
 
-### Change app content
-
-Open `script.js` and edit the `appData` object.
-
-Example:
+Example text app:
 
 ```js
-messages: {
-  title: "Messages",
-  subtitle: "3 goofy chats",
-  render: () => `...`
+{
+  id: "rules",
+  name: "Rules",
+  icon: "⚖️",
+  type: "text",
+  description: "Example custom text app.",
+  content: {
+    title: "Tablet Rules",
+    body: "1. Do not feed the scarabs."
+  }
 }
 ```
 
-### Change colors
+Example list app:
 
-Open `style.css` and edit:
-
-```css
-:root {
-  --accent: #54d6ff;
-  --accent-2: #9b7cff;
+```js
+{
+  id: "files",
+  name: "Relics",
+  icon: "🗿",
+  type: "list",
+  description: "Fake file storage.",
+  items: ["tablet_log.txt", "sandy_config.json"]
 }
 ```
 
-## Notes
+Example folder/group app:
 
-This is a static site. It does not need a server and should work on GitHub Pages.
+```js
+{
+  id: "folder-tools",
+  name: "Tools",
+  icon: "🧰",
+  type: "folder",
+  description: "A folder/group example.",
+  children: ["calculator", "files", "camera"]
+}
+```
+
+## Debug app
+
+The Debug app replaces the old fake Messages app.
+
+It lets you create apps directly in the phone UI.
+
+Debug-created apps save only in the browser/device using localStorage. To make them permanent, use Export Custom Apps and paste the JSON into `config.js`.
+
+## App movement
+
+Press **Edit**, then drag icons on desktop.
+
+On mobile, press **Edit**, long-press an app until the move notification appears, then tap another app to place it before that app.
+
+## Resetting
+
+Use the page helper button **Reset layout** or clear browser storage.

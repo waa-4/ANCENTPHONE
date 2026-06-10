@@ -1,16 +1,16 @@
 {
-  "name": "ancentphone-phone-ui",
-  "version": "1.0.0",
-  "description": "A polished phone-style static website UI for AncentPhone.",
+  "name": "ancentphone-ancient-configurable",
+  "version": "2.0.0",
+  "description": "Ancient-looking configurable phone UI for AncentPhone with config.js apps, pages, moving, folders, and debug app creation.",
   "scripts": {
     "start": "python -m http.server 8000"
   },
   "keywords": [
     "phone",
+    "ancient",
     "static-site",
     "github-pages",
-    "ui"
+    "configurable"
   ],
-  "author": "",
   "license": "MIT"
 }
