@@ -1,0 +1,16 @@
+{
+  "name": "ancentphone-phone-ui",
+  "version": "1.0.0",
+  "description": "A polished phone-style static website UI for AncentPhone.",
+  "scripts": {
+    "start": "python -m http.server 8000"
+  },
+  "keywords": [
+    "phone",
+    "static-site",
+    "github-pages",
+    "ui"
+  ],
+  "author": "",
+  "license": "MIT"
+}
