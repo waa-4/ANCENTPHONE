@@ -1,26 +1,21 @@
-# AncentPhone - Ancient Configurable Phone UI
+# AncentPhone - Fun Physics + Website Links Update
 
-This is a more ancient-looking, configurable version of **AncentPhone**.
+This version makes AncentPhone feel more like a fun cursed phone toy.
 
-## Main features
+## New features
 
-- Sand/stone/ancient phone design
-- `config.js` for built-in custom apps
-- Multiple home screen pages
-- Swipe left/right on mobile to change pages
-- Page dots
-- Dock
-- Edit mode for moving apps
-- Drag app icons on desktop
-- Touch-friendly move helper on mobile
-- Folders/groups
-- Debug app that creates custom apps
-- Custom apps saved with `localStorage`
-- Theme switching
-- Sandstorm visual toggle
-- Notes app
-- Calculator app
-- List/text/html custom app types
+- Website link apps
+- `config.js` supports app URLs
+- Move mode for swiping/dragging apps around
+- App positions save in localStorage
+- Gravity mode: apps fall, bounce, and collide
+- Tilt mode: phone tilts with mouse/device orientation
+- Chaos button to fling apps everywhere
+- Settings app with fun toggles
+- Debug app can create website-link apps
+- Folders/groups still supported
+- Dock still supported
+- Sand/ancient phone style
 
 ## Files
 
@@ -28,73 +23,45 @@ This is a more ancient-looking, configurable version of **AncentPhone**.
 - `style.css`
 - `script.js`
 - `config.js`
+- `README.md`
 
-## How to install
+## Install
 
 Extract this zip into your repo.
 
-If your repo already has `index.html`, `style.css`, `script.js`, or `config.js`, back them up first.
+Back up your old files first if needed.
 
-## Editing apps in config.js
+## Making website link apps
 
-Open `config.js`.
-
-Example text app:
+Open `config.js` and add an app like this:
 
 ```js
 {
-  id: "rules",
-  name: "Rules",
-  icon: "⚖️",
-  type: "text",
-  description: "Example custom text app.",
-  content: {
-    title: "Tablet Rules",
-    body: "1. Do not feed the scarabs."
-  }
+  id: "my-site",
+  name: "My Site",
+  icon: "🌐",
+  type: "link",
+  description: "Opens my website.",
+  url: "https://example.com",
+  openInNewTab: true
 }
 ```
 
-Example list app:
+## Moving apps
 
-```js
-{
-  id: "files",
-  name: "Relics",
-  icon: "🗿",
-  type: "list",
-  description: "Fake file storage.",
-  items: ["tablet_log.txt", "sandy_config.json"]
-}
-```
+Click **Move**, then drag/swipe icons around.
 
-Example folder/group app:
+Positions save automatically in your browser.
 
-```js
-{
-  id: "folder-tools",
-  name: "Tools",
-  icon: "🧰",
-  type: "folder",
-  description: "A folder/group example.",
-  children: ["calculator", "files", "camera"]
-}
-```
+## Gravity mode
 
-## Debug app
+Click **Gravity** and apps fall like physical objects.
 
-The Debug app replaces the old fake Messages app.
+Use **Chaos** to throw them everywhere.
 
-It lets you create apps directly in the phone UI.
+## Tilt mode
 
-Debug-created apps save only in the browser/device using localStorage. To make them permanent, use Export Custom Apps and paste the JSON into `config.js`.
+Open **Settings** or the Tablet Log and enable **Tilt**.
 
-## App movement
-
-Press **Edit**, then drag icons on desktop.
-
-On mobile, press **Edit**, long-press an app until the move notification appears, then tap another app to place it before that app.
-
-## Resetting
-
-Use the page helper button **Reset layout** or clear browser storage.
+On desktop, the phone reacts to mouse movement.
+On mobile, it may react to device tilt if the browser allows it.

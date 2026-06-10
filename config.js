@@ -1,14 +1,21 @@
 /*
-  AncentPhone config file
+  AncentPhone config.js
 
-  Edit this file to add/remove built-in apps.
-  Apps made in the Debug app are saved in the browser's localStorage.
+  Built-in apps go here.
+  Types:
+  - link: opens another website
+  - text: simple text app
+  - list: list app
+  - folder: group app
+  - notes: saved notes
+  - calculator: calculator
+  - debug: in-phone custom app creator
+  - camera: fake camera
 */
 
 window.ANCENTPHONE_CONFIG = {
   phoneName: "AncentPhone",
-  phoneSubtitle: "Sand-powered rectangle",
-  appsPerPage: 9,
+  phoneSubtitle: "Ancient cursed smartphone",
   dock: ["debug", "notes", "browser", "settings"],
 
   themes: [
@@ -24,32 +31,55 @@ window.ANCENTPHONE_CONFIG = {
       name: "Debug",
       icon: "🧪",
       type: "debug",
-      description: "Create, edit, delete, and export custom apps."
+      description: "Create custom apps and website links."
+    },
+    {
+      id: "browser",
+      name: "Obelisk Net",
+      icon: "🌐",
+      type: "link",
+      description: "Example website link app.",
+      url: "https://example.com",
+      openInNewTab: true
+    },
+    {
+      id: "github",
+      name: "GitHub",
+      icon: "🐙",
+      type: "link",
+      description: "Link to GitHub.",
+      url: "https://github.com",
+      openInNewTab: true
+    },
+    {
+      id: "youtube",
+      name: "YouTube",
+      icon: "▶️",
+      type: "link",
+      description: "Link to YouTube.",
+      url: "https://youtube.com",
+      openInNewTab: true
     },
     {
       id: "notes",
       name: "Notes",
       icon: "📜",
       type: "notes",
-      description: "A papyrus note pad that saves locally."
+      description: "Papyrus note pad."
     },
     {
-      id: "browser",
-      name: "Obelisk Net",
-      icon: "🌐",
-      type: "text",
-      description: "Ancient fake browser.",
-      content: {
-        title: "Obelisk Net",
-        body: "Search results carved directly into the stone. Replace this in config.js."
-      }
+      id: "settings",
+      name: "Settings",
+      icon: "⚙️",
+      type: "settings",
+      description: "Phone toggles and fun stuff."
     },
     {
       id: "weather",
       name: "Sandcast",
       icon: "☀️",
       type: "text",
-      description: "Very trustworthy desert forecast.",
+      description: "Fake desert forecast.",
       content: {
         title: "Forecast",
         body: "Hot, sandy, and maybe haunted. Chance of scarabs: 40%."
@@ -86,23 +116,12 @@ window.ANCENTPHONE_CONFIG = {
       description: "Fake ancient camera."
     },
     {
-      id: "folder-tools",
-      name: "Tools",
+      id: "folder-fun",
+      name: "Fun",
       icon: "🧰",
       type: "folder",
-      description: "A folder/group example.",
-      children: ["calculator", "files", "camera"]
-    },
-    {
-      id: "rules",
-      name: "Rules",
-      icon: "⚖️",
-      type: "text",
-      description: "Example custom text app.",
-      content: {
-        title: "Tablet Rules",
-        body: "1. Do not feed the scarabs.\n2. Do not install cursed APKs.\n3. Sand is not a valid password."
-      }
+      description: "Grouped apps.",
+      children: ["calculator", "files", "camera", "music"]
     }
   ]
 };

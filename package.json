@@ -1,16 +1,16 @@
 {
-  "name": "ancentphone-ancient-configurable",
-  "version": "2.0.0",
-  "description": "Ancient-looking configurable phone UI for AncentPhone with config.js apps, pages, moving, folders, and debug app creation.",
+  "name": "ancentphone-fun-physics-links",
+  "version": "3.0.0",
+  "description": "Cursed ancient phone UI with link apps, draggable/swipe apps, gravity, tilt, and debug app creator.",
   "scripts": {
     "start": "python -m http.server 8000"
   },
   "keywords": [
     "phone",
     "ancient",
-    "static-site",
+    "physics",
     "github-pages",
-    "configurable"
+    "static-site"
   ],
   "license": "MIT"
 }
