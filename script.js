@@ -22,6 +22,7 @@ const state = {
   pointer: null,
   grabbed: null,
   calc: "0",
+  tempApps: [],
   mouseTiltX: 0,
   mouseTiltY: 0,
   lastFrame: performance.now()
@@ -36,7 +37,7 @@ function allApps() {
   const result = [];
   const used = new Set();
 
-  (CONFIG.apps || []).concat(state.customApps).forEach(app => {
+  (CONFIG.apps || []).concat(state.customApps).concat(state.tempApps).forEach(app => {
     if (!app || !app.id || used.has(app.id)) return;
     used.add(app.id);
     result.push(app);
@@ -86,6 +87,46 @@ function saveLayout() {
 function saveCustomApps() {
   localStorage.setItem(STORE.custom, JSON.stringify(state.customApps));
 }
+
+function removeOldSpawnedApps() {
+  const before = state.customApps.length;
+  state.customApps = state.customApps.filter(app => !String(app.id || "").startsWith("relic-"));
+  if (state.customApps.length !== before) {
+    saveCustomApps();
+  }
+
+  if (state.layout) {
+    state.layout.home = state.layout.home.filter(id => !String(id).startsWith("relic-"));
+    state.layout.dock = state.layout.dock.filter(id => !String(id).startsWith("relic-"));
+    Object.keys(state.layout.positions || {}).forEach(id => {
+      if (String(id).startsWith("relic-")) delete state.layout.positions[id];
+    });
+    Object.keys(state.bodies || {}).forEach(id => {
+      if (String(id).startsWith("relic-")) delete state.bodies[id];
+    });
+    saveLayout();
+  }
+
+  renderHome();
+  notify("Spawned apps cleared", "Old permanent relic apps were removed.");
+}
+
+function clearTempSpawnedApps() {
+  state.tempApps = [];
+  if (state.layout) {
+    state.layout.home = state.layout.home.filter(id => !String(id).startsWith("temp-relic-") && !String(id).startsWith("relic-"));
+    Object.keys(state.layout.positions || {}).forEach(id => {
+      if (String(id).startsWith("temp-relic-") || String(id).startsWith("relic-")) delete state.layout.positions[id];
+    });
+    Object.keys(state.bodies || {}).forEach(id => {
+      if (String(id).startsWith("temp-relic-") || String(id).startsWith("relic-")) delete state.bodies[id];
+    });
+    saveLayout();
+  }
+  renderHome();
+  notify("Temporary apps cleared", "Spawned apps are gone.");
+}
+
 
 function screenMode(text) {
   $("#modeText").textContent = text;
@@ -655,27 +696,25 @@ function copyText(text) {
 }
 
 function spawnApp() {
-  const id = `relic-${Date.now()}`;
+  const id = `temp-relic-${Date.now()}`;
   const icons = ["🪲", "🏺", "🧱", "🌵", "🔥", "👁️", "🦴", "🧿"];
   const app = {
     id,
-    name: `Relic ${state.customApps.length + 1}`,
+    name: `Temp Relic ${state.tempApps.length + 1}`,
     icon: icons[Math.floor(Math.random() * icons.length)],
     type: "text",
-    description: "Spawned app.",
+    description: "Temporary spawned app. It disappears when you reload or clear temporary apps.",
     content: {
-      title: "Random Relic",
-      body: "This app was spawned from the side panel."
+      title: "Temporary Relic",
+      body: "This spawned app is temporary now. It is not saved into localStorage."
     }
   };
 
-  state.customApps.push(app);
-  saveCustomApps();
+  state.tempApps.push(app);
   state.layout.home.push(id);
   state.layout.positions[id] = gridPos(state.layout.home.length - 1);
-  saveLayout();
   renderHome();
-  notify("Spawned", app.name);
+  notify("Temporary app spawned", app.name);
 }
 
 function toggleLog() {
@@ -714,6 +753,7 @@ $("#openDebug").addEventListener("click", () => {
   openApp("debug");
 });
 $("#spawnBtn").addEventListener("click", spawnApp);
+$("#clearSpawnedBtn").addEventListener("click", () => { removeOldSpawnedApps(); clearTempSpawnedApps(); });
 
 document.addEventListener("click", event => {
   const folder = event.target.closest("[data-folder-open]");
@@ -740,6 +780,7 @@ $("#screen").addEventListener("touchend", event => {
 }, { passive: true });
 
 state.layout = loadLayout();
+removeOldSpawnedApps();
 setTheme(state.themeIndex);
 renderHome();
 updateClock();

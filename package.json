@@ -1,7 +1,7 @@
 {
   "name": "ancentphone-stable-fun-patch",
-  "version": "3.1.0",
-  "description": "Stable AncentPhone patch with website links, draggable apps, gravity, tilt, config.js, and debug app creator.",
+  "version": "3.1.1",
+  "description": "Stable AncentPhone patch with temporary spawned apps and clear spawned apps button.",
   "scripts": {
     "start": "python -m http.server 8000"
   },
